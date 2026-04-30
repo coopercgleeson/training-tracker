@@ -333,6 +333,7 @@
     color: var(--ink-dim);
   }
 
+  /* ── WEEK DOTS ─────────────────────────────── */
   .weeks {
     display: flex;
     gap: 6px;
@@ -354,7 +355,10 @@
     color: var(--ink-dim);
     backdrop-filter: blur(10px);
     transition: all 0.2s;
+    cursor: pointer;
+    user-select: none;
   }
+  .week-dot:active { transform: scale(0.93); }
   .week-dot.done {
     background: rgba(200, 255, 62, 0.15);
     color: var(--accent);
@@ -372,6 +376,104 @@
     border-color: var(--accent);
   }
 
+  /* ── WEEK DETAIL PANEL ──────────────────────── */
+  .week-panel {
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--line-bright);
+    border-radius: 20px;
+    padding: 20px 20px 16px;
+    margin-bottom: 20px;
+    display: none;
+    animation: slideDown 0.22s ease;
+  }
+  .week-panel.visible { display: block; }
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .wp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 14px;
+  }
+  .wp-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    letter-spacing: 0.04em;
+  }
+  .wp-close {
+    background: none;
+    border: none;
+    color: var(--ink-faint);
+    font-size: 20px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 0 0 12px;
+  }
+  .wp-close:hover { color: var(--ink-dim); }
+  .wp-days {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .wp-day {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .wp-day:last-child { border-bottom: none; }
+  .wp-day-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    width: 36px;
+    padding-top: 2px;
+    flex-shrink: 0;
+  }
+  .wp-day-content {
+    flex: 1;
+  }
+  .wp-day-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--ink);
+    margin-bottom: 2px;
+  }
+  .wp-day-title.run-color { color: var(--accent); }
+  .wp-day-title.tempo-color { color: var(--cool); }
+  .wp-day-title.intervals-color { color: var(--warm); }
+  .wp-day-title.rest-color { color: var(--ink-faint); }
+  .wp-day-detail {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 12px;
+    color: var(--ink-dim);
+    line-height: 1.45;
+  }
+  .wp-focus-badge {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: rgba(200, 255, 62, 0.1);
+    border: 1px solid rgba(200, 255, 62, 0.2);
+    border-radius: 100px;
+    padding: 3px 8px;
+    margin-bottom: 10px;
+  }
+
+  /* ── CHARTS ─────────────────────────────────── */
   .chart-card {
     background: var(--bg-card);
     backdrop-filter: blur(20px);
@@ -448,6 +550,7 @@
     font-size: 13px;
   }
 
+  /* ── MODAL ──────────────────────────────────── */
   .modal-bg {
     position: fixed;
     inset: 0;
@@ -601,13 +704,14 @@
     <span class="plus">+</span> Log Today's Session
   </button>
 
-  <div class="section-h"><h2>Build</h2><span class="meta">8 Week Plan</span></div>
+  <div class="section-h"><h2>Build</h2><span class="meta">8 Week Plan · Tap a week</span></div>
   <div class="weeks" id="week-dots"></div>
+  <div class="week-panel" id="week-panel"></div>
 
   <div class="section-h"><h2>Pace</h2><span class="meta">Lower = Faster</span></div>
   <div class="chart-card"><div class="chart-wrap"><canvas id="paceChart"></canvas></div></div>
 
-  <div class="section-h"><h2>Volume</h2><span class="meta">Per Week · KM</span></div>
+  <div class="section-h"><h2>Volume</h2><span class="meta">8-Week Plan · KM</span></div>
   <div class="chart-card"><div class="chart-wrap"><canvas id="volumeChart"></canvas></div></div>
 
   <div class="section-h"><h2>Recent</h2><span class="meta">Tap × to remove</span></div>
@@ -671,183 +775,245 @@
   const STORAGE_KEY = 'sub19-tracker-v2';
   const START_DATE = new Date('2026-04-29');
 
+  // Seed data derived from Garmin CSV — distances in km, timeMin in decimal minutes
   const SEED_DATA = [
-    { date: '2026-03-08', type: 'run', distance: 4.17, timeMin: 32.57, hr: 154 },
-    { date: '2026-03-12', type: 'run', distance: 5.20, timeMin: 22.98, hr: 171 },
-    { date: '2026-03-17', type: 'long', distance: 10.01, timeMin: 45.48, hr: 172 },
-    { date: '2026-03-18', type: 'run', distance: 6.97, timeMin: 36.28, hr: 174 },
-    { date: '2026-03-23', type: 'run', distance: 6.05, timeMin: 37.75, hr: 172 },
-    { date: '2026-03-30', type: 'run', distance: 6.31, timeMin: 29.15, hr: 174 },
-    { date: '2026-04-02', type: 'run', distance: 4.69, timeMin: 25.48, hr: 154 },
-    { date: '2026-04-06', type: 'run', distance: 6.16, timeMin: 29.42, hr: 171 },
-    { date: '2026-04-11', type: 'run', distance: 6.50, timeMin: 42.57, hr: 134 },
-    { date: '2026-04-15', type: 'run', distance: 6.94, timeMin: 29.20, hr: 177 },
-    { date: '2026-04-18', type: 'run', distance: 8.02, timeMin: 35.48, hr: 173 },
-    { date: '2026-04-19', type: 'run', distance: 6.48, timeMin: 38.08, hr: 143 },
-    { date: '2026-04-22', type: 'run', distance: 5.12, timeMin: 32.68, hr: 132 },
-    { date: '2026-04-23', type: 'run', distance: 6.50, timeMin: 33.62, hr: 162 },
-    { date: '2026-04-27', type: 'long', distance: 11.67, timeMin: 52.53, hr: 171 }
+    { date: '2026-03-08', type: 'run',  distance: 4.17,  timeMin: 32.567, hr: 154 },
+    { date: '2026-03-12', type: 'run',  distance: 5.20,  timeMin: 22.983, hr: 171 },
+    { date: '2026-03-17', type: 'long', distance: 10.01, timeMin: 45.483, hr: 172 },
+    { date: '2026-03-18', type: 'run',  distance: 6.97,  timeMin: 36.283, hr: 174 },
+    { date: '2026-03-23', type: 'run',  distance: 6.05,  timeMin: 37.750, hr: 172 },
+    { date: '2026-03-30', type: 'run',  distance: 6.31,  timeMin: 29.150, hr: 174 },
+    { date: '2026-04-02', type: 'run',  distance: 4.69,  timeMin: 25.483, hr: 154 },
+    { date: '2026-04-06', type: 'run',  distance: 6.16,  timeMin: 29.417, hr: 171 },
+    { date: '2026-04-11', type: 'run',  distance: 6.50,  timeMin: 42.567, hr: 134 },
+    { date: '2026-04-15', type: 'run',  distance: 6.94,  timeMin: 29.200, hr: 177 },
+    { date: '2026-04-18', type: 'run',  distance: 8.02,  timeMin: 35.483, hr: 173 },
+    { date: '2026-04-19', type: 'run',  distance: 6.48,  timeMin: 38.083, hr: 143 },
+    { date: '2026-04-22', type: 'run',  distance: 5.12,  timeMin: 32.683, hr: 132 },
+    { date: '2026-04-23', type: 'run',  distance: 6.50,  timeMin: 27.117, hr: 162 },  // treadmill moving time 27:07
+    { date: '2026-04-27', type: 'long', distance: 11.67, timeMin: 52.433, hr: 171 }
   ];
 
   let storageOk = false;
-  try { localStorage.setItem('__t', '__t'); localStorage.removeItem('__t'); storageOk = true; } catch (e) {}
+  try { localStorage.setItem('__t','__t'); localStorage.removeItem('__t'); storageOk = true; } catch(e) {}
   function load() {
     if (!storageOk) return [...SEED_DATA];
     try { const s = localStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : [...SEED_DATA]; }
-    catch (e) { return [...SEED_DATA]; }
+    catch(e) { return [...SEED_DATA]; }
   }
   function save() {
     if (!storageOk) return;
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions)); } catch (e) {}
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions)); } catch(e) {}
   }
   let sessions = load();
 
-  function paceOf(s) { return (s.distance && s.timeMin) ? s.timeMin / s.distance : null; }
-  function paceLbl(p) { if (!p) return '—'; const m = Math.floor(p); const sec = Math.round((p - m) * 60); return `${m}:${String(sec).padStart(2, '0')}`; }
-  function timeLbl(min) { const m = Math.floor(min); const sec = Math.round((min - m) * 60); return `${m}:${String(sec).padStart(2, '0')}`; }
+  // ── Helpers ─────────────────────────────────────
+  // paceOf returns min/km as a decimal number
+  function paceOf(s) {
+    if (!s.distance || !s.timeMin || s.distance <= 0) return null;
+    const p = s.timeMin / s.distance;
+    // sanity-check: ignore implausible paces (< 2 min/km or > 12 min/km)
+    return (p >= 2 && p <= 12) ? p : null;
+  }
+  function paceLbl(p) {
+    if (!p) return '—';
+    const m = Math.floor(p);
+    const sec = Math.round((p - m) * 60);
+    return `${m}:${String(sec).padStart(2,'0')}`;
+  }
+  function timeLbl(min) {
+    const m = Math.floor(min);
+    const sec = Math.round((min - m) * 60);
+    return `${m}:${String(sec).padStart(2,'0')}`;
+  }
   function parseTime(str) {
     if (!str) return null;
     const p = str.split(':');
     if (p.length !== 2) return null;
-    const m = parseInt(p[0], 10), s = parseInt(p[1], 10);
-    return (isNaN(m) || isNaN(s)) ? null : m + s / 60;
+    const m = parseInt(p[0],10), s = parseInt(p[1],10);
+    return (isNaN(m)||isNaN(s)) ? null : m + s/60;
   }
   function getWeek() {
-    const d = Math.floor((new Date() - START_DATE) / 86400000);
-    return Math.max(1, Math.min(8, Math.floor(d / 7) + 1));
+    const d = Math.floor((Date.now() - START_DATE.getTime()) / 86400000);
+    return Math.max(1, Math.min(8, Math.floor(d/7)+1));
   }
   function fmtD(iso) {
-    return new Date(iso).toLocaleDateString('en-AU', { day: '2-digit', month: 'short' }).toUpperCase();
+    return new Date(iso).toLocaleDateString('en-AU',{day:'2-digit',month:'short'}).toUpperCase();
+  }
+  // Week start/end dates (Mon–Sun aligned to START_DATE)
+  function weekRange(weekNum) {
+    const ws = new Date(START_DATE);
+    ws.setDate(ws.getDate() + (weekNum-1)*7);
+    const we = new Date(ws);
+    we.setDate(we.getDate() + 6);
+    return { ws, we };
   }
 
+  // ── Per-week plan data ────────────────────────────
+  function getWeekPlan(week) {
+    const isRace = week === 8;
+    const longKm = [12,13,14,14,15,16,12,0][week-1];
+
+    // Interval session per week
+    const intervals = [
+      { name:'8 × 60s hills',   pace:'~3:30/km',  detail:'First 2 reps controlled — if rep 8 matches rep 1 in pace, you nailed it.' },
+      { name:'8 × 60s hills',   pace:'~3:30/km',  detail:'Build aggression on reps 5-8. Focus on knee drive uphill.' },
+      { name:'10 × 60s hills',  pace:'~3:30/km',  detail:'Peak hill volume before switching to track intervals.' },
+      { name:'4 × 1km',         pace:'3:55/km',   detail:'Even pacing across all 4. Last rep should match first.' },
+      { name:'5 × 1km',         pace:'3:50/km',   detail:'Sub-19 territory. If reps 4–5 fall apart, drop pace next week.' },
+      { name:'5 × 1km · 75s rec',pace:'3:50/km',  detail:'Same pace, less rest. Race-fatigue specific.' },
+      { name:'3×1km + 4×400m',  pace:'3:45 / 3:30', detail:'400s fast but controlled — not a sprint.' },
+      { name:'5 × 400m taper',  pace:'3:30/km',   detail:'Should feel SHARP, not tired. Cut to 4 reps if heavy.' }
+    ][week-1];
+
+    // Tempo session per week
+    const tempos = [
+      { name:'3 × 8 min',   pace:'4:45/km' },
+      { name:'3 × 8 min',   pace:'4:45/km' },
+      { name:'3 × 10 min',  pace:'4:40/km' },
+      { name:'3 × 10 min',  pace:'4:40/km' },
+      { name:'2 × 15 min',  pace:'4:35/km' },
+      { name:'2 × 15 min',  pace:'4:35/km' },
+      { name:'1 × 20 min',  pace:'4:30/km' },
+      { name:'20 min easy + strides', pace:'5:30/km' }
+    ][week-1];
+
+    const focus = isRace ? 'Race Week 🏁' :
+      week <= 3 ? 'Foundation · Hills' :
+      week <= 5 ? 'Build · Track Intervals' :
+      week <= 7 ? 'Sharpen · Race-Pace' : 'Taper';
+
+    const weekNote = [
+      'Establish aerobic base. Every run at conversational pace (HR < 155) except hill sprints.',
+      'Volume builds gently. Gym sessions support running — don\'t trash your legs.',
+      'Final hill week before shifting to track. Push the Sunday long run.',
+      'Switch to measured 1km reps. First real taste of sub-19 pace.',
+      'Peak interval week. 5 × 1km at race pace is the hardest session of the plan.',
+      'Race-specific fatigue. Shorter rest forces mental toughness at pace.',
+      'Final quality sessions. Sharpen the top end — race is 8 days out.',
+      'Trust the work. Keep everything easy except race day on Saturday.'
+    ][week-1];
+
+    const days = [
+      { day:'Mon', title:'Push Day', cls:'rest-color', detail:'Bench · OHP · Incline DB · Lateral Raises · Triceps' },
+      { day:'Tue', title:`Intervals + Legs — ${intervals.name}`, cls:'intervals-color', detail:`${intervals.pace} · Squat · RDL · Lunges after run` },
+      { day:'Wed', title:`Tempo — ${tempos.name}`, cls:'tempo-color', detail:`${tempos.pace} · Core work after` },
+      { day:'Thu', title:'Pull Day', cls:'rest-color', detail:'Pull-ups · Barbell Row · Lat Pulldown · Face Pulls' },
+      { day:'Fri', title:'Rest or Light', cls:'rest-color', detail:'Accessory optional. Prioritise sleep before long run.' },
+      { day:'Sat', title: isRace ? '5K Race — Sub-19 🎯' : `Long Run — ${longKm}km`, cls: isRace ? 'intervals-color' : 'run-color', detail: isRace ? 'Target 18:59 · Pace 3:48/km · Hold back km 1.' : `HR < 155 · Pace 5:30–6:00/km · Engine builder.` },
+      { day:'Sun', title:'Full Rest', cls:'rest-color', detail:'Adaptation happens here. Sleep, eat, recover.' }
+    ];
+
+    return { focus, weekNote, intervals, tempos, longKm, days, isRace };
+  }
+
+  // ── Today card ────────────────────────────────────
   function getWorkout(dow, week) {
     if (dow === 0) return {
-      tag: 'Sunday', cls: 'rest', title: 'Rest',
-      sub: 'Full recovery. Sleep early, eat well.',
-      stats: [{ l: 'Focus', v: 'Recovery' }, { l: 'Tomorrow', v: 'Push' }],
-      cue: 'Skip the urge to "do something." Adaptation happens at rest.'
+      tag:'Sunday', cls:'rest', title:'Rest',
+      sub:'Full recovery. Sleep early, eat well.',
+      stats:[{l:'Focus',v:'Recovery'},{l:'Tomorrow',v:'Push'}],
+      cue:'Skip the urge to "do something." Adaptation happens at rest.'
     };
-
     if (dow === 1) return {
-      tag: 'Monday', cls: '', title: 'Push <span class="accent">·</span> Day',
-      sub: '45 min, in and out. Compound first while fresh.',
-      stats: [{ l: 'Time', v: '45 min' }, { l: 'Rest', v: '90 sec' }],
-      lifts: [
-        { n: 'Bench Press', r: '4 × 6-8' },
-        { n: 'Overhead Press', r: '3 × 8' },
-        { n: 'Incline DB Press', r: '3 × 10' },
-        { n: 'Lateral Raises', r: '3 × 12' },
-        { n: 'Tricep Pushdowns', r: '3 × 10-12' },
-        { n: 'Tricep Overhead Ext.', r: '3 × 12' }
+      tag:'Monday', cls:'', title:'Push <span class="accent">·</span> Day',
+      sub:'45 min, in and out. Compound first while fresh.',
+      stats:[{l:'Time',v:'45 min'},{l:'Rest',v:'90 sec'}],
+      lifts:[
+        {n:'Bench Press',r:'4 × 6-8'},{n:'Overhead Press',r:'3 × 8'},
+        {n:'Incline DB Press',r:'3 × 10'},{n:'Lateral Raises',r:'3 × 12'},
+        {n:'Tricep Pushdowns',r:'3 × 10-12'},{n:'Tricep Overhead Ext.',r:'3 × 12'}
       ],
-      cue: 'Bench and OHP are the money lifts — go heavy. Save the pump work for after.'
+      cue:'Bench and OHP are the money lifts — go heavy. Save the pump work for after.'
     };
-
     if (dow === 2) {
-      const speed = week <= 3 ? {
-        title: 'Hills', name: week === 3 ? '10 × 60s' : '8 × 60s', pace: '~3:30 /km',
-        cue: 'First 2 reps controlled. If rep 8 ≥ rep 1 in pace, you nailed it.'
-      } : week === 4 ? {
-        title: 'Intervals', name: '4 × 1km', pace: '3:55 · 12.0 km/h',
-        cue: 'Even pacing across all 4. Last rep should match first.'
-      } : week === 5 ? {
-        title: 'Intervals', name: '5 × 1km', pace: '3:50 · 12.4 km/h',
-        cue: 'Sub-19 territory. If reps 4-5 fall apart, drop pace next week.'
-      } : week === 6 ? {
-        title: 'Intervals', name: '5 × 1km · 75s rec', pace: '3:50 · 12.4 km/h',
-        cue: 'Same pace, less rest. Race-fatigue specific.'
-      } : week === 7 ? {
-        title: 'Sharpening', name: '3×1km + 4×400m', pace: '3:45 / 3:30',
-        cue: '400s fast but controlled — not a sprint.'
+      const speed = week<=3 ? {
+        title:'Hills', name:week===3?'10 × 60s':'8 × 60s', pace:'~3:30 /km',
+        cue:'First 2 reps controlled. If rep 8 ≥ rep 1 in pace, you nailed it.'
+      } : week===4 ? {
+        title:'Intervals', name:'4 × 1km', pace:'3:55 · 12.0 km/h',
+        cue:'Even pacing across all 4. Last rep should match first.'
+      } : week===5 ? {
+        title:'Intervals', name:'5 × 1km', pace:'3:50 · 12.4 km/h',
+        cue:'Sub-19 territory. If reps 4-5 fall apart, drop pace next week.'
+      } : week===6 ? {
+        title:'Intervals', name:'5 × 1km · 75s rec', pace:'3:50 · 12.4 km/h',
+        cue:'Same pace, less rest. Race-fatigue specific.'
+      } : week===7 ? {
+        title:'Sharpening', name:'3×1km + 4×400m', pace:'3:45 / 3:30',
+        cue:'400s fast but controlled — not a sprint.'
       } : {
-        title: 'Taper', name: '5 × 400m', pace: '3:30 /km',
-        cue: 'Should feel SHARP, not tired. Cut to 4 reps if heavy.'
+        title:'Taper', name:'5 × 400m', pace:'3:30 /km',
+        cue:'Should feel SHARP, not tired. Cut to 4 reps if heavy.'
       };
-
       return {
-        tag: 'Tuesday', cls: '', title: speed.title + ' <span class="accent">+</span> Legs',
-        sub: 'Big day. Run first, lift after. Eat carbs 90 min before.',
-        stats: [{ l: 'Run', v: speed.name }, { l: 'Pace', v: '<span class="em">' + speed.pace + '</span>' }],
-        lifts: [
-          { n: 'Squat', r: '4 × 6-8' },
-          { n: 'Romanian Deadlift', r: '3 × 8-10' },
-          { n: 'Walking Lunges', r: '3 × 10/leg' },
-          { n: 'Leg Press', r: '3 × 10' },
-          { n: 'Calf Raises', r: '3 × 15' },
-          { n: 'Plank', r: '3 × 45s' }
+        tag:'Tuesday', cls:'', title:speed.title+' <span class="accent">+</span> Legs',
+        sub:'Big day. Run first, lift after. Eat carbs 90 min before.',
+        stats:[{l:'Run',v:speed.name},{l:'Pace',v:'<span class="em">'+speed.pace+'</span>'}],
+        lifts:[
+          {n:'Squat',r:'4 × 6-8'},{n:'Romanian Deadlift',r:'3 × 8-10'},
+          {n:'Walking Lunges',r:'3 × 10/leg'},{n:'Leg Press',r:'3 × 10'},
+          {n:'Calf Raises',r:'3 × 15'},{n:'Plank',r:'3 × 45s'}
         ],
-        liftHeader: 'Leg Lift (after run · drop weight 10-15%)',
-        cue: speed.cue
+        liftHeader:'Leg Lift (after run · drop weight 10-15%)',
+        cue:speed.cue
       };
     }
-
     if (dow === 3) {
-      const t = week <= 2 ? { s: '3 × 8 min', p: '4:45 · 12.6 km/h' }
-        : week <= 4 ? { s: '3 × 10 min', p: '4:40 · 12.9 km/h' }
-        : week <= 6 ? { s: '2 × 15 min', p: '4:35 · 13.1 km/h' }
-        : week === 7 ? { s: '1 × 20 min', p: '4:30 · 13.3 km/h' }
-        : { s: '20 min easy', p: '5:30 + strides' };
-
+      const t = week<=2?{s:'3 × 8 min',p:'4:45 · 12.6 km/h'}
+        :week<=4?{s:'3 × 10 min',p:'4:40 · 12.9 km/h'}
+        :week<=6?{s:'2 × 15 min',p:'4:35 · 13.1 km/h'}
+        :week===7?{s:'1 × 20 min',p:'4:30 · 13.3 km/h'}
+        :{s:'20 min easy',p:'5:30 + strides'};
       return {
-        tag: 'Wednesday', cls: '', title: 'Tempo <span class="accent">·</span> Day',
-        sub: week === 8 ? 'Taper — easy with strides only.' : 'Builds 5K speed. HR 165-172, "comfortably hard."',
-        stats: [{ l: 'Work', v: t.s }, { l: 'Pace', v: '<span class="em">' + t.p + '</span>' }],
-        lifts: [
-          { n: 'Hanging Leg Raises', r: '3 × 10-12' },
-          { n: 'Cable Woodchoppers', r: '3 × 10/side' },
-          { n: 'Pallof Press', r: '3 × 10/side' },
-          { n: 'Side Plank', r: '3 × 30s/side' },
-          { n: 'Dead Bug', r: '3 × 10/side' }
+        tag:'Wednesday', cls:'', title:'Tempo <span class="accent">·</span> Day',
+        sub:week===8?'Taper — easy with strides only.':'Builds 5K speed. HR 165-172, "comfortably hard."',
+        stats:[{l:'Work',v:t.s},{l:'Pace',v:'<span class="em">'+t.p+'</span>'}],
+        lifts:[
+          {n:'Hanging Leg Raises',r:'3 × 10-12'},{n:'Cable Woodchoppers',r:'3 × 10/side'},
+          {n:'Pallof Press',r:'3 × 10/side'},{n:'Side Plank',r:'3 × 30s/side'},
+          {n:'Dead Bug',r:'3 × 10/side'}
         ],
-        liftHeader: 'Core (after run)',
-        cue: 'If HR drifts above 175 in rep 1, slow by 5 sec/km. Don\'t hero it.'
+        liftHeader:'Core (after run)',
+        cue:'If HR drifts above 175 in rep 1, slow by 5 sec/km. Don\'t hero it.'
       };
     }
-
     if (dow === 4) return {
-      tag: 'Thursday', cls: '', title: 'Pull <span class="accent">·</span> Day',
-      sub: 'Compound focus. Pull-ups or rows lead. 45 min.',
-      stats: [{ l: 'Time', v: '45 min' }, { l: 'Rest', v: '90 sec' }],
-      lifts: [
-        { n: 'Pull-ups', r: '4 × 6-8' },
-        { n: 'Barbell Row', r: '4 × 8' },
-        { n: 'Lat Pulldown', r: '3 × 10-12' },
-        { n: 'Seated Cable Row', r: '3 × 10' },
-        { n: 'Face Pulls', r: '3 × 15' },
-        { n: 'Bicep Curls', r: '3 × 10-12' }
+      tag:'Thursday', cls:'', title:'Pull <span class="accent">·</span> Day',
+      sub:'Compound focus. Pull-ups or rows lead. 45 min.',
+      stats:[{l:'Time',v:'45 min'},{l:'Rest',v:'90 sec'}],
+      lifts:[
+        {n:'Pull-ups',r:'4 × 6-8'},{n:'Barbell Row',r:'4 × 8'},
+        {n:'Lat Pulldown',r:'3 × 10-12'},{n:'Seated Cable Row',r:'3 × 10'},
+        {n:'Face Pulls',r:'3 × 15'},{n:'Bicep Curls',r:'3 × 10-12'}
       ],
-      cue: 'Pull-ups king. If 4×8 is easy, add weight. Face pulls fix posture for running.'
+      cue:'Pull-ups king. If 4×8 is easy, add weight. Face pulls fix posture for running.'
     };
-
     if (dow === 5) return {
-      tag: 'Friday', cls: 'rest', title: 'Rest <span class="accent">·</span> or Light',
-      sub: 'After work — rest is the smart play. Long run tomorrow.',
-      stats: [{ l: 'Tomorrow', v: 'Long Run' }, { l: 'Tonight', v: 'Sleep' }],
-      lifts: [
-        { n: 'Lateral Raises', r: '3 × 15' },
-        { n: 'Rear Delt Flys', r: '3 × 15' },
-        { n: 'Bicep Curls', r: '3 × 12' },
-        { n: 'Tricep Pushdowns', r: '3 × 12' },
-        { n: 'Cable Crunches', r: '3 × 15' }
+      tag:'Friday', cls:'rest', title:'Rest <span class="accent">·</span> or Light',
+      sub:'After work — rest is the smart play. Long run tomorrow.',
+      stats:[{l:'Tomorrow',v:'Long Run'},{l:'Tonight',v:'Sleep'}],
+      lifts:[
+        {n:'Lateral Raises',r:'3 × 15'},{n:'Rear Delt Flys',r:'3 × 15'},
+        {n:'Bicep Curls',r:'3 × 12'},{n:'Tricep Pushdowns',r:'3 × 12'},
+        {n:'Cable Crunches',r:'3 × 15'}
       ],
-      liftHeader: 'Optional accessory (only if fresh)',
-      cue: 'Skip if even slightly tired. Saturday\'s long run depends on tonight\'s sleep.'
+      liftHeader:'Optional accessory (only if fresh)',
+      cue:'Skip if even slightly tired. Saturday\'s long run depends on tonight\'s sleep.'
     };
-
     if (dow === 6) {
-      if (week === 8) return {
-        tag: 'Race Day', cls: '', title: '5K <span class="accent">·</span> Sub-19',
-        sub: 'Eight weeks in the bank. Trust it.',
-        stats: [{ l: 'Target', v: '<span class="em">18:59</span>' }, { l: 'Pace', v: '3:48 /km' }],
-        cue: 'Hold back the first km. If cooked at km 3, you went out too hard.'
+      if (week===8) return {
+        tag:'Race Day', cls:'', title:'5K <span class="accent">·</span> Sub-19',
+        sub:'Eight weeks in the bank. Trust it.',
+        stats:[{l:'Target',v:'<span class="em">18:59</span>'},{l:'Pace',v:'3:48 /km'}],
+        cue:'Hold back the first km. If cooked at km 3, you went out too hard.'
       };
-
-      const km = week === 1 ? 12 : week === 2 ? 13 : week === 3 ? 14 : week === 4 ? 14 : week === 5 ? 15 : week === 6 ? 16 : 12;
+      const km=[12,13,14,14,15,16,12][week-1];
       return {
-        tag: 'Saturday', cls: '', title: 'Long <span class="accent">·</span> ' + km + 'km',
-        sub: 'Slow and patient. The engine builder.',
-        stats: [{ l: 'Distance', v: km + ' km' }, { l: 'Pace', v: '<span class="em">5:30-6:00</span>' }],
-        cue: 'HR <155 is the rule. Don\'t push. Slow long runs let you race fast.'
+        tag:'Saturday', cls:'', title:'Long <span class="accent">·</span> '+km+'km',
+        sub:'Slow and patient. The engine builder.',
+        stats:[{l:'Distance',v:km+' km'},{l:'Pace',v:'<span class="em">5:30-6:00</span>'}],
+        cue:'HR <155 is the rule. Don\'t push. Slow long runs let you race fast.'
       };
     }
     return null;
@@ -857,71 +1023,115 @@
     const card = document.getElementById('today-card');
     const w = getWorkout(new Date().getDay(), getWeek());
     if (!w) return;
-
-    card.className = 'today' + (w.cls ? ' ' + w.cls : '');
-
-    const stats = w.stats.map(s => `
+    card.className = 'today'+(w.cls?' '+w.cls:'');
+    const stats = w.stats.map(s=>`
       <div class="key-stat">
         <div class="ks-label">${s.l}</div>
         <div class="ks-value">${s.v}</div>
       </div>`).join('');
-
-    const lifts = w.lifts ? `
+    const lifts = w.lifts?`
       <details>
-        <summary>${w.liftHeader || 'The Lifts'}</summary>
+        <summary>${w.liftHeader||'The Lifts'}</summary>
         <ul class="lift-list">
-          ${w.lifts.map(l => `<li><span class="name">${l.n}</span><span class="reps">${l.r}</span></li>`).join('')}
+          ${w.lifts.map(l=>`<li><span class="name">${l.n}</span><span class="reps">${l.r}</span></li>`).join('')}
         </ul>
-      </details>` : '';
-
-    const cue = w.cue ? `
+      </details>`:'';
+    const cue = w.cue?`
       <details>
         <summary>Coach's Note</summary>
         <div class="coach-note">${w.cue}</div>
-      </details>` : '';
-
-    card.innerHTML = `
+      </details>`:'';
+    card.innerHTML=`
       <div class="today-tag">${w.tag}</div>
       <div class="today-title">${w.title}</div>
       <div class="today-sub">${w.sub}</div>
       <div class="key-stats">${stats}</div>
-      ${lifts}
-      ${cue}
-    `;
+      ${lifts}${cue}`;
   }
 
   function renderTop() {
     document.getElementById('today-date').textContent =
-      new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short' }).toUpperCase();
+      new Date().toLocaleDateString('en-AU',{day:'2-digit',month:'short'}).toUpperCase();
     const w = getWeek();
     document.getElementById('pill-week').textContent = w;
-    document.getElementById('progress-fill').style.width = (w / 8 * 100) + '%';
+    document.getElementById('progress-fill').style.width = (w/8*100)+'%';
   }
 
+  // ── Week dots + panel ─────────────────────────────
+  let openWeek = null;
   function renderWeeks() {
     const dots = document.getElementById('week-dots');
     const cur = getWeek();
     dots.innerHTML = '';
-    for (let i = 1; i <= 8; i++) {
-      const cls = i === 8 ? 'race' : (i === cur ? 'current' : (i < cur ? 'done' : ''));
+    for (let i=1; i<=8; i++) {
+      const cls = i===8 ? 'race' : (i===cur?'current':(i<cur?'done':''));
       const d = document.createElement('div');
-      d.className = 'week-dot ' + cls;
+      d.className = 'week-dot '+cls;
       d.textContent = i;
+      d.dataset.week = i;
+      d.addEventListener('click', () => toggleWeekPanel(i));
       dots.appendChild(d);
     }
   }
 
+  function toggleWeekPanel(week) {
+    const panel = document.getElementById('week-panel');
+    if (openWeek === week) {
+      openWeek = null;
+      panel.classList.remove('visible');
+      return;
+    }
+    openWeek = week;
+    renderWeekPanel(week);
+    panel.classList.add('visible');
+  }
+
+  function renderWeekPanel(week) {
+    const panel = document.getElementById('week-panel');
+    const plan = getWeekPlan(week);
+
+    const daysHtml = plan.days.map(d => `
+      <div class="wp-day">
+        <div class="wp-day-name">${d.day}</div>
+        <div class="wp-day-content">
+          <div class="wp-day-title ${d.cls}">${d.title}</div>
+          <div class="wp-day-detail">${d.detail}</div>
+        </div>
+      </div>`).join('');
+
+    panel.innerHTML = `
+      <div class="wp-header">
+        <div>
+          <div class="wp-focus-badge">${plan.focus}</div>
+          <div class="wp-title">Week ${week} of 8</div>
+        </div>
+        <button class="wp-close" id="wp-close-btn">×</button>
+      </div>
+      <div class="coach-note" style="margin-bottom:14px; padding:0 0 14px; border-bottom:1px solid var(--line)">${plan.weekNote}</div>
+      <div class="wp-days">${daysHtml}</div>`;
+
+    document.getElementById('wp-close-btn').addEventListener('click', () => {
+      openWeek = null;
+      panel.classList.remove('visible');
+    });
+  }
+
+  // ── Charts ────────────────────────────────────────
   Chart.defaults.color = '#8a9690';
   Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
   Chart.defaults.font.family = "'JetBrains Mono', monospace";
   Chart.defaults.font.size = 9;
 
   let paceChart, volumeChart;
-  const colorByType = { tempo: '#4ad6c8', intervals: '#ff6b35', long: '#e8efe9', run: '#c8ff3e', gym: '#8a9690' };
+  const colorByType = { tempo:'#4ad6c8', intervals:'#ff6b35', long:'#e8efe9', run:'#c8ff3e', gym:'#8a9690' };
 
   function renderPace() {
     const ctx = document.getElementById('paceChart').getContext('2d');
-    const data = [...sessions].filter(s => paceOf(s)).sort((a, b) => new Date(a.date) - new Date(b.date))
+
+    // Only running sessions with valid, sane pace; sorted chronologically
+    const data = sessions
+      .filter(s => s.type !== 'gym' && paceOf(s) !== null)
+      .sort((a,b) => new Date(a.date) - new Date(b.date))
       .map(s => ({ x: s.date, y: paceOf(s), type: s.type }));
 
     if (paceChart) paceChart.destroy();
@@ -932,7 +1142,8 @@
         borderColor: '#c8ff3e', borderWidth: 1.5, tension: 0.3,
         pointRadius: 4, pointHoverRadius: 6,
         pointBackgroundColor: data.map(d => colorByType[d.type] || '#c8ff3e'),
-        pointBorderColor: '#050706', pointBorderWidth: 1.5
+        pointBorderColor: '#050706', pointBorderWidth: 1.5,
+        fill: false
       }] },
       options: {
         responsive: true, maintainAspectRatio: false,
@@ -947,8 +1158,18 @@
           }
         },
         scales: {
-          x: { type: 'time', time: { unit: 'week' }, ticks: { maxTicksLimit: 5 }, grid: { display: false } },
-          y: { reverse: true, ticks: { callback: (v) => paceLbl(v), maxTicksLimit: 5 }, suggestedMin: 3.5, suggestedMax: 7 }
+          x: {
+            type: 'time',
+            time: { unit: 'week', tooltipFormat: 'dd MMM' },
+            ticks: { maxTicksLimit: 6 },
+            grid: { display: false }
+          },
+          y: {
+            reverse: true,
+            ticks: { callback: (v) => paceLbl(v), maxTicksLimit: 5 },
+            suggestedMin: 3.5,
+            suggestedMax: 7
+          }
         }
       }
     });
@@ -956,19 +1177,29 @@
 
   function renderVolume() {
     const ctx = document.getElementById('volumeChart').getContext('2d');
-    const baseline = new Date(START_DATE);
-    baseline.setDate(baseline.getDate() - 42);
+
+    // Build exactly 8 weekly buckets aligned to START_DATE
     const weeks = [];
-    for (let i = 0; i < 14; i++) {
-      const ws = new Date(baseline); ws.setDate(ws.getDate() + i * 7);
-      const we = new Date(ws); we.setDate(we.getDate() + 6);
-      const total = sessions.filter(s => {
-        const d = new Date(s.date);
-        return d >= ws && d <= we && s.type !== 'gym';
-      }).reduce((sum, s) => sum + (s.distance || 0), 0);
+    for (let i = 0; i < 8; i++) {
+      const ws = new Date(START_DATE);
+      ws.setDate(ws.getDate() + i * 7);
+      const we = new Date(ws);
+      we.setDate(we.getDate() + 6);
+
+      // Planned km targets for each week
+      const planned = [25, 27, 29, 32, 35, 37, 30, 5][i]; // w8 is taper/race
+
+      const actual = sessions
+        .filter(s => {
+          const d = new Date(s.date);
+          return s.type !== 'gym' && d >= ws && d <= we;
+        })
+        .reduce((sum, s) => sum + (s.distance || 0), 0);
+
       weeks.push({
-        label: ws.toLocaleDateString('en-AU', { day: '2-digit', month: 'short' }),
-        total, plan: ws >= START_DATE
+        label: `W${i+1}`,
+        actual: parseFloat(actual.toFixed(1)),
+        planned
       });
     }
 
@@ -977,44 +1208,68 @@
       type: 'bar',
       data: {
         labels: weeks.map(w => w.label),
-        datasets: [{
-          data: weeks.map(w => w.total),
-          backgroundColor: weeks.map(w => w.plan ? '#c8ff3e' : 'rgba(255,255,255,0.15)'),
-          borderRadius: 4, barThickness: 12
-        }]
+        datasets: [
+          {
+            label: 'Planned',
+            data: weeks.map(w => w.planned),
+            backgroundColor: 'rgba(255,255,255,0.06)',
+            borderColor: 'rgba(255,255,255,0.12)',
+            borderWidth: 1,
+            borderRadius: 4,
+            barThickness: 18
+          },
+          {
+            label: 'Actual',
+            data: weeks.map(w => w.actual),
+            backgroundColor: weeks.map((w,i) => {
+              const cur = getWeek();
+              if (i+1 < cur) return '#c8ff3e';
+              if (i+1 === cur) return 'rgba(200,255,62,0.6)';
+              return 'rgba(200,255,62,0.15)';
+            }),
+            borderRadius: 4,
+            barThickness: 18
+          }
+        ]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
-          legend: { display: false },
+          legend: {
+            display: true,
+            labels: {
+              boxWidth: 10, padding: 14,
+              color: '#8a9690',
+              font: { size: 9, family: "'JetBrains Mono', monospace" }
+            }
+          },
           tooltip: {
             backgroundColor: '#050706', borderColor: '#c8ff3e', borderWidth: 1, padding: 10,
-            callbacks: { label: (i) => `${i.raw.toFixed(1)} km` }
+            callbacks: {
+              label: (i) => `${i.dataset.label}: ${i.raw} km`
+            }
           }
         },
         scales: {
-          x: { ticks: { maxTicksLimit: 6 }, grid: { display: false } },
-          y: { ticks: { callback: v => v + 'k', maxTicksLimit: 4 } }
+          x: { ticks: { maxTicksLimit: 8 }, grid: { display: false } },
+          y: { ticks: { callback: v => v+'km', maxTicksLimit: 4 } }
         }
       }
     });
   }
 
+  // ── Log list ──────────────────────────────────────
   function renderLog() {
     const list = document.getElementById('log-list');
-    const sorted = [...sessions].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
-
-    if (sorted.length === 0) {
-      list.innerHTML = '<div class="log-empty">No sessions yet</div>';
-      return;
-    }
+    const sorted = [...sessions].sort((a,b) => new Date(b.date)-new Date(a.date)).slice(0,10);
+    if (!sorted.length) { list.innerHTML='<div class="log-empty">No sessions yet</div>'; return; }
     list.innerHTML = sorted.map(s => {
       const p = paceOf(s);
       const meta = [];
       if (s.distance) meta.push(`<span class="em">${s.distance.toFixed(1)}km</span>`);
-      if (s.timeMin) meta.push(timeLbl(s.timeMin));
-      if (p) meta.push(paceLbl(p) + '/km');
-      if (s.hr) meta.push('HR ' + s.hr);
+      if (s.timeMin)  meta.push(timeLbl(s.timeMin));
+      if (p)          meta.push(paceLbl(p)+'/km');
+      if (s.hr)       meta.push('HR '+s.hr);
       const idx = sessions.indexOf(s);
       return `
         <div class="log-entry">
@@ -1029,24 +1284,20 @@
     list.querySelectorAll('.l-del').forEach(b => {
       b.addEventListener('click', e => {
         const i = parseInt(e.target.dataset.i, 10);
-        if (confirm('Remove this session?')) {
-          sessions.splice(i, 1);
-          save();
-          renderAll();
-        }
+        if (confirm('Remove this session?')) { sessions.splice(i,1); save(); renderAll(); }
       });
     });
   }
 
+  // ── Modal ─────────────────────────────────────────
   function inferType() {
     const dow = new Date().getDay();
-    if (dow === 2) return 'intervals';
-    if (dow === 3) return 'tempo';
-    if (dow === 6) return 'long';
-    if (dow === 1 || dow === 4 || dow === 5) return 'gym';
+    if (dow===2) return 'intervals';
+    if (dow===3) return 'tempo';
+    if (dow===6) return 'long';
+    if (dow===1||dow===4||dow===5) return 'gym';
     return 'run';
   }
-
   function openModal() {
     document.getElementById('f-date').valueAsDate = new Date();
     document.getElementById('f-type').value = inferType();
@@ -1056,62 +1307,45 @@
     document.getElementById('f-notes').value = '';
     document.getElementById('modal-bg').classList.add('open');
   }
-  function closeModal() {
-    document.getElementById('modal-bg').classList.remove('open');
-  }
+  function closeModal() { document.getElementById('modal-bg').classList.remove('open'); }
 
   document.getElementById('open-modal').addEventListener('click', openModal);
   document.getElementById('btn-cancel').addEventListener('click', closeModal);
-  document.getElementById('modal-bg').addEventListener('click', e => {
-    if (e.target.id === 'modal-bg') closeModal();
-  });
-
+  document.getElementById('modal-bg').addEventListener('click', e => { if (e.target.id==='modal-bg') closeModal(); });
   document.getElementById('btn-save').addEventListener('click', () => {
     const date = document.getElementById('f-date').value;
     if (!date) { alert('Pick a date'); return; }
     const s = { date, type: document.getElementById('f-type').value };
     const d = parseFloat(document.getElementById('f-dist').value);
     const t = parseTime(document.getElementById('f-time').value);
-    const h = parseInt(document.getElementById('f-hr').value, 10);
+    const h = parseInt(document.getElementById('f-hr').value,10);
     const n = document.getElementById('f-notes').value.trim();
     if (!isNaN(d)) s.distance = d;
     if (t) s.timeMin = t;
     if (!isNaN(h)) s.hr = h;
     if (n) s.notes = n;
-    sessions.push(s);
-    save();
-    closeModal();
-    renderAll();
+    sessions.push(s); save(); closeModal(); renderAll();
   });
 
   document.getElementById('btn-export').addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify(sessions, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(sessions,null,2)],{type:'application/json'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = `sub19-${new Date().toISOString().slice(0,10)}.json`;
-    a.click();
+    a.href=url; a.download=`sub19-${new Date().toISOString().slice(0,10)}.json`; a.click();
     URL.revokeObjectURL(url);
   });
-  document.getElementById('btn-import').addEventListener('click', () => {
-    document.getElementById('f-import').click();
-  });
-  document.getElementById('f-import').addEventListener('change', (e) => {
-    const f = e.target.files[0];
-    if (!f) return;
+  document.getElementById('btn-import').addEventListener('click', () => document.getElementById('f-import').click());
+  document.getElementById('f-import').addEventListener('change', e => {
+    const f = e.target.files[0]; if (!f) return;
     const r = new FileReader();
     r.onload = ev => {
       try {
         const p = JSON.parse(ev.target.result);
         if (!Array.isArray(p)) throw new Error();
-        sessions = p;
-        save();
-        renderAll();
-        alert(`Imported ${p.length} sessions`);
-      } catch (err) { alert('Invalid file'); }
+        sessions=p; save(); renderAll(); alert(`Imported ${p.length} sessions`);
+      } catch { alert('Invalid file'); }
     };
-    r.readAsText(f);
-    e.target.value = '';
+    r.readAsText(f); e.target.value='';
   });
 
   function renderAll() {
