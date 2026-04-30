@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sub-19 Project · Training Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0e0c;
+    --bg-elev: #111614;
+    --bg-card: #161c19;
+    --line: #1f2925;
+    --line-bright: #2a3631;
+    --ink: #e8efe9;
+    --ink-dim: #8a9690;
+    --ink-faint: #4a5651;
+    --accent: #c8ff3e;
+    --accent-dim: #8aa829;
+    --warm: #ff6b35;
+    --cool: #4ad6c8;
+    --danger: #ff4d6d;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 400;
+    line-height: 1.5;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body {
+    background-image:
+      radial-gradient(circle at 20% 0%, rgba(200, 255, 62, 0.04) 0%, transparent 40%),
+      radial-gradient(circle at 80% 100%, rgba(74, 214, 200, 0.03) 0%, transparent 40%);
+  }
+
+  .grain {
+    position: fixed; inset: 0; pointer-events: none; z-index: 100; opacity: 0.4;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .wrap {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 32px 40px 80px;
+  }
+
+  /* HEADER */
+  .header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 24px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 40px;
+  }
+
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .eyebrow::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 12px var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(56px, 9vw, 120px);
+    line-height: 0.85;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  h1 .accent {
+    color: var(--accent);
+    font-style: italic;
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    letter-spacing: -0.04em;
+  }
+
+  .header-meta {
+    text-align: right;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-dim);
+    line-height: 1.8;
+  }
+  .header-meta .val { color: var(--ink); font-weight: 500; }
+
+  /* HERO STATS */
+  .hero {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 48px;
+  }
+
+  .hero-card {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    padding: 28px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-card.primary {
+    background: linear-gradient(135deg, var(--accent) 0%, #a3d52e 100%);
+    color: var(--bg);
+    border: none;
+  }
+  .hero-card .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    opacity: 0.6;
+    margin-bottom: 16px;
+  }
+  .hero-card .num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 64px;
+    line-height: 0.9;
+    letter-spacing: -0.01em;
+  }
+  .hero-card .num .unit {
+    font-size: 22px;
+    opacity: 0.55;
+    margin-left: 4px;
+    letter-spacing: 0;
+  }
+  .hero-card .sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    margin-top: 12px;
+    opacity: 0.7;
+  }
+  .hero-card.primary .label,
+  .hero-card.primary .sub { opacity: 0.7; }
+
+  .hero-card .pb-display {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 84px;
+    line-height: 0.85;
+  }
+  .hero-card .pb-target {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 18px;
+    margin-top: 6px;
+    opacity: 0.75;
+  }
+
+  /* SECTION HEADERS */
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 24px;
+    margin-bottom: 24px;
+    margin-top: 56px;
+  }
+  .section-head h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 0.02em;
+    line-height: 1;
+  }
+  .section-head .num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.2em;
+  }
+  .section-head .rule {
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  /* WEEK GRID */
+  .week-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .week {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    padding: 16px 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+  .week:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .week.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+  }
+  .week.complete::after {
+    content: '✓';
+    position: absolute;
+    top: 6px; right: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+  }
+  .week.active.complete::after { color: var(--bg); }
+
+  .week .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    opacity: 0.6;
+  }
+  .week .num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    line-height: 1;
+    margin-top: 4px;
+  }
+  .week .phase {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    margin-top: 6px;
+    opacity: 0.5;
+  }
+
+  /* CHARTS */
+  .charts {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .chart-card {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    padding: 24px;
+    min-height: 320px;
+  }
+  .chart-card.full { grid-column: 1 / -1; }
+  .chart-card h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 0.02em;
+    margin-bottom: 4px;
+  }
+  .chart-card .desc {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-dim);
+    margin-bottom: 20px;
+  }
+  .chart-wrap { position: relative; height: 260px; }
+
+  /* SESSION TARGETS TABLE */
+  .targets {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    padding: 28px 32px;
+  }
+  .targets table { width: 100%; border-collapse: collapse; }
+  .targets th, .targets td {
+    text-align: left;
+    padding: 14px 12px;
+    border-bottom: 1px solid var(--line);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+  }
+  .targets th {
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    font-weight: 500;
+  }
+  .targets tr:last-child td { border-bottom: none; }
+  .targets td.zone { color: var(--ink); font-weight: 500; }
+  .targets td.pace { color: var(--accent); font-weight: 700; }
+  .targets td.feel { font-family: 'Fraunces', serif; font-style: italic; color: var(--ink-dim); }
+
+  /* SESSION LOG */
+  .log-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .log-form {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    padding: 28px;
+  }
+  .log-form h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    margin-bottom: 4px;
+  }
+  .log-form .desc {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-dim);
+    margin-bottom: 24px;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .form-row.single { grid-template-columns: 1fr; }
+  .form-row.three { grid-template-columns: 1fr 1fr 1fr; }
+
+  .field label {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-bottom: 6px;
+  }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--line-bright);
+    color: var(--ink);
+    padding: 10px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    transition: border 0.15s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .field textarea { resize: vertical; min-height: 60px; }
+
+  .btn {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    padding: 14px 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 12px;
+    transition: all 0.15s;
+  }
+  .btn:hover { background: var(--ink); transform: translateY(-1px); }
+  .btn.secondary {
+    background: transparent;
+    color: var(--ink-dim);
+    border: 1px solid var(--line-bright);
+  }
+  .btn.secondary:hover { color: var(--ink); border-color: var(--ink-dim); background: transparent; }
+
+  .log-list {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    padding: 28px;
+    max-height: 600px;
+    overflow-y: auto;
+  }
+  .log-list h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    margin-bottom: 4px;
+  }
+  .log-list .desc {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-dim);
+    margin-bottom: 20px;
+  }
+  .log-entry {
+    border-left: 2px solid var(--line-bright);
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .log-entry:hover { border-left-color: var(--accent); background: var(--bg-elev); }
+  .log-entry .top {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .log-entry .type {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 0.02em;
+  }
+  .log-entry .type.run { color: var(--accent); }
+  .log-entry .type.tempo { color: var(--cool); }
+  .log-entry .type.intervals { color: var(--warm); }
+  .log-entry .type.long { color: var(--ink); }
+  .log-entry .type.gym { color: var(--ink-dim); }
+  .log-entry .date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-dim);
+    letter-spacing: 0.1em;
+  }
+  .log-entry .stats {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-dim);
+    line-height: 1.7;
+  }
+  .log-entry .stats span { color: var(--ink); }
+  .log-entry .note {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 12px;
+    color: var(--ink-dim);
+    margin-top: 6px;
+  }
+  .log-entry .del {
+    position: absolute;
+    top: 8px; right: 8px;
+    background: none; border: none;
+    color: var(--ink-faint);
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 2px 6px;
+  }
+  .log-entry .del:hover { color: var(--danger); }
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--ink-faint);
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 14px;
+  }
+
+  /* WEEKLY SCHEDULE */
+  .schedule {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+  }
+  .day {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    padding: 18px 14px;
+    min-height: 140px;
+  }
+  .day.heavy { border-color: var(--accent-dim); background: linear-gradient(180deg, var(--bg-elev) 0%, rgba(200, 255, 62, 0.04) 100%); }
+  .day .dow {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+  }
+  .day.heavy .dow { color: var(--accent); }
+  .day .ctx {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 12px;
+  }
+  .day .session {
+    font-family: 'Fraunces', serif;
+    font-size: 13px;
+    line-height: 1.4;
+    margin-bottom: 6px;
+  }
+  .day .session strong {
+    font-weight: 600;
+    color: var(--ink);
+    display: block;
+    font-size: 14px;
+    margin-bottom: 2px;
+  }
+  .day .session .det {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-dim);
+    line-height: 1.5;
+  }
+
+  /* PROGRESSION TABLE */
+  .progression {
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    padding: 32px;
+    overflow-x: auto;
+  }
+  .progression table { width: 100%; border-collapse: collapse; min-width: 700px; }
+  .progression th, .progression td {
+    text-align: left;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .progression th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    font-weight: 500;
+  }
+  .progression td {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+  .progression td.wk {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    color: var(--accent);
+    width: 60px;
+  }
+  .progression td.phase-tag {
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+  }
+  .progression tr.race { background: rgba(200, 255, 62, 0.04); }
+  .progression tr.race td.wk { color: var(--warm); }
+
+  /* FOOTER */
+  .footer {
+    margin-top: 80px;
+    padding-top: 32px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 1024px) {
+    .hero { grid-template-columns: 1fr 1fr; }
+    .charts { grid-template-columns: 1fr; }
+    .log-grid { grid-template-columns: 1fr; }
+    .schedule { grid-template-columns: repeat(7, minmax(120px, 1fr)); overflow-x: auto; }
+    .week-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+  @media (max-width: 640px) {
+    .wrap { padding: 24px 20px 60px; }
+    .hero { grid-template-columns: 1fr; }
+    .header { grid-template-columns: 1fr; }
+    .header-meta { text-align: left; }
+    .week-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--line-bright); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--ink-faint); }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+
+<div class="wrap">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div>
+      <div class="eyebrow">Project · 8 Week Build · Mandurah, WA</div>
+      <h1>Sub<span class="accent">·</span>19<br>Project</h1>
+    </div>
+    <div class="header-meta">
+      <div>Athlete · <span class="val">~80kg</span></div>
+      <div>PB · <span class="val">19:30</span></div>
+      <div>Goal · <span class="val">18:59</span></div>
+      <div>Today · <span class="val" id="today-date">—</span></div>
+    </div>
+  </header>
+
+  <!-- HERO STATS -->
+  <section class="hero">
+    <div class="hero-card primary">
+      <div class="label">Target Time</div>
+      <div class="pb-display">18:59</div>
+      <div class="pb-target">3:48 / km · sub-19 5K</div>
+    </div>
+    <div class="hero-card">
+      <div class="label">Current Week</div>
+      <div class="num" id="stat-week">1<span class="unit">/8</span></div>
+      <div class="sub" id="stat-phase">Base + Threshold</div>
+    </div>
+    <div class="hero-card">
+      <div class="label">Sessions Logged</div>
+      <div class="num" id="stat-sessions">0</div>
+      <div class="sub" id="stat-runs">0 runs · 0 lifts</div>
+    </div>
+    <div class="hero-card">
+      <div class="label">Distance Banked</div>
+      <div class="num" id="stat-distance">0<span class="unit">km</span></div>
+      <div class="sub" id="stat-time">0h 0m total</div>
+    </div>
+  </section>
+
+  <!-- WEEK PROGRESS -->
+  <div class="section-head">
+    <span class="num">01</span>
+    <h2>The 8 Weeks</h2>
+    <div class="rule"></div>
+  </div>
+  <div class="week-grid" id="week-grid"></div>
+
+  <!-- CHARTS -->
+  <div class="section-head">
+    <span class="num">02</span>
+    <h2>Trend Lines</h2>
+    <div class="rule"></div>
+  </div>
+  <div class="charts">
+    <div class="chart-card">
+      <h3>Run Pace Over Time</h3>
+      <div class="desc">Lower is faster · target zones shaded</div>
+      <div class="chart-wrap"><canvas id="paceChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>HR vs Pace</h3>
+      <div class="desc">Efficiency check · trend down-left = fitter</div>
+      <div class="chart-wrap"><canvas id="hrPaceChart"></canvas></div>
+    </div>
+  </div>
+  <div class="charts">
+    <div class="chart-card full">
+      <h3>Weekly Volume</h3>
+      <div class="desc">Distance per week · keep build gradual, no &gt;15% week-over-week jumps</div>
+      <div class="chart-wrap"><canvas id="volumeChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- PACE TARGETS -->
+  <div class="section-head">
+    <span class="num">03</span>
+    <h2>Pace Zones</h2>
+    <div class="rule"></div>
+  </div>
+  <div class="targets">
+    <table>
+      <thead>
+        <tr><th>Zone</th><th>Pace</th><th>HR</th><th>Treadmill</th><th>Feel</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="zone">Easy / Long</td><td class="pace">5:30 – 6:00 /km</td><td>&lt; 155</td><td>10.0 – 10.9 km/h</td><td class="feel">conversational, full sentences</td></tr>
+        <tr><td class="zone">Tempo</td><td class="pace">4:30 – 4:45 /km</td><td>165 – 172</td><td>12.6 – 13.3 km/h</td><td class="feel">3–4 words at a time</td></tr>
+        <tr><td class="zone">5K Race Pace</td><td class="pace">3:45 – 3:50 /km</td><td>175 – 185</td><td>15.6 – 16.0 km/h</td><td class="feel">one-word answers, focused</td></tr>
+        <tr><td class="zone">Hill / VO2</td><td class="pace">~3:30 /km equiv</td><td>180 – 190</td><td>incline 6–8%</td><td class="feel">all-out, controlled</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- WEEKLY SCHEDULE -->
+  <div class="section-head">
+    <span class="num">04</span>
+    <h2>Weekly Rhythm</h2>
+    <div class="rule"></div>
+  </div>
+  <div class="schedule">
+    <div class="day">
+      <div class="dow">Mon</div>
+      <div class="ctx">Work · 7am–5:30pm</div>
+      <div class="session"><strong>Push</strong><span class="det">Chest · Shoulders · Tri<br>45 min compound</span></div>
+    </div>
+    <div class="day heavy">
+      <div class="dow">Tue</div>
+      <div class="ctx">Uni · time</div>
+      <div class="session"><strong>Hills + Legs</strong><span class="det">8×60s hill hard<br>then leg lift</span></div>
+    </div>
+    <div class="day heavy">
+      <div class="dow">Wed</div>
+      <div class="ctx">Uni · time</div>
+      <div class="session"><strong>Tempo + Core</strong><span class="det">3×8min @ 4:45<br>core/mobility</span></div>
+    </div>
+    <div class="day">
+      <div class="dow">Thu</div>
+      <div class="ctx">Work · 7am–5:30pm</div>
+      <div class="session"><strong>Pull</strong><span class="det">Back · Bi<br>45 min compound</span></div>
+    </div>
+    <div class="day">
+      <div class="dow">Fri</div>
+      <div class="ctx">Work · 7am–5:30pm</div>
+      <div class="session"><strong>Rest / accessory</strong><span class="det">optional 30 min<br>delts · arms · core</span></div>
+    </div>
+    <div class="day heavy">
+      <div class="dow">Sat</div>
+      <div class="ctx">Free</div>
+      <div class="session"><strong>Long Run</strong><span class="det">12–14km easy<br>5:30–6:00 /km</span></div>
+    </div>
+    <div class="day">
+      <div class="dow">Sun</div>
+      <div class="ctx">Free</div>
+      <div class="session"><strong>Rest</strong><span class="det">full recovery</span></div>
+    </div>
+  </div>
+
+  <!-- 8 WEEK PROGRESSION -->
+  <div class="section-head">
+    <span class="num">05</span>
+    <h2>The Build</h2>
+    <div class="rule"></div>
+  </div>
+  <div class="progression">
+    <table>
+      <thead>
+        <tr><th>Wk</th><th>Phase</th><th>Tuesday Speed</th><th>Wednesday Tempo</th><th>Saturday Long</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="wk">1</td><td class="phase-tag">Base + Threshold</td><td>Hills · 8×60s</td><td>3×8min @ 4:45</td><td>12km easy</td></tr>
+        <tr><td class="wk">2</td><td class="phase-tag">Base + Threshold</td><td>Hills · 8×60s</td><td>3×8min @ 4:45</td><td>13km easy</td></tr>
+        <tr><td class="wk">3</td><td class="phase-tag">Base + Threshold</td><td>Hills · 10×60s</td><td>3×10min @ 4:40</td><td>14km easy</td></tr>
+        <tr><td class="wk">4</td><td class="phase-tag">Threshold + VO2</td><td>4×1km @ 3:55</td><td>3×10min @ 4:40</td><td>14km easy</td></tr>
+        <tr><td class="wk">5</td><td class="phase-tag">Threshold + VO2</td><td>5×1km @ 3:50</td><td>2×15min @ 4:35</td><td>15km easy</td></tr>
+        <tr><td class="wk">6</td><td class="phase-tag">Threshold + VO2</td><td>5×1km @ 3:50 · 75s rec</td><td>2×15min @ 4:35</td><td>16km easy</td></tr>
+        <tr><td class="wk">7</td><td class="phase-tag">Sharpening</td><td>3×1km + 4×400m</td><td>1×20min @ 4:30</td><td>12km easy</td></tr>
+        <tr class="race"><td class="wk">8</td><td class="phase-tag">Taper · Race</td><td>5×400m @ 3:30</td><td>20min easy + strides</td><td>RACE DAY</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- LOG -->
+  <div class="section-head">
+    <span class="num">06</span>
+    <h2>Session Log</h2>
+    <div class="rule"></div>
+  </div>
+  <div class="log-grid">
+    <div class="log-form">
+      <h3>Log a Session</h3>
+      <div class="desc">Track every quality session · feeds the charts above</div>
+
+      <div class="form-row">
+        <div class="field">
+          <label>Date</label>
+          <input type="date" id="f-date">
+        </div>
+        <div class="field">
+          <label>Type</label>
+          <select id="f-type">
+            <option value="tempo">Tempo Run</option>
+            <option value="intervals">Intervals / Hills</option>
+            <option value="long">Long Run</option>
+            <option value="run">Easy Run</option>
+            <option value="gym">Gym</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row three">
+        <div class="field">
+          <label>Distance (km)</label>
+          <input type="number" step="0.01" id="f-dist" placeholder="e.g. 8.5">
+        </div>
+        <div class="field">
+          <label>Time (mm:ss)</label>
+          <input type="text" id="f-time" placeholder="e.g. 38:20">
+        </div>
+        <div class="field">
+          <label>Avg HR</label>
+          <input type="number" id="f-hr" placeholder="e.g. 168">
+        </div>
+      </div>
+
+      <div class="form-row single">
+        <div class="field">
+          <label>Notes (rep splits, how it felt, etc.)</label>
+          <textarea id="f-notes" placeholder="Felt strong, last rep fastest..."></textarea>
+        </div>
+      </div>
+
+      <button class="btn" id="btn-add">Log Session</button>
+      <button class="btn secondary" id="btn-export">Export Data (JSON)</button>
+      <button class="btn secondary" id="btn-import">Import Data (JSON)</button>
+      <input type="file" id="f-import" accept="application/json" style="display:none">
+    </div>
+
+    <div class="log-list">
+      <h3>Recent Sessions</h3>
+      <div class="desc">Click the × to remove · most recent first</div>
+      <div id="log-entries"></div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div>Sub-19 Project · Built for the 8 week chase</div>
+    <div id="storage-status">Storage · checking…</div>
+    <div>Pace = 3:48 /km · 18:59 · 80kg</div>
+  </footer>
+
+</div>
+
+<script>
+  // ============ STATE ============
+  const STORAGE_KEY = 'sub19-tracker-v1';
+  const START_DATE = new Date('2026-04-29'); // today, week 1 starts
+
+  const PHASES = {
+    1: 'Base + Threshold', 2: 'Base + Threshold', 3: 'Base + Threshold',
+    4: 'Threshold + VO2', 5: 'Threshold + VO2', 6: 'Threshold + VO2',
+    7: 'Sharpening', 8: 'Taper · Race'
+  };
+
+  // Seed with the user's existing run data so charts have content from day 1
+  const SEED_DATA = [
+    { date: '2026-03-08', type: 'run', distance: 4.17, timeMin: 32.57, hr: 154, notes: 'Perth' },
+    { date: '2026-03-12', type: 'run', distance: 5.20, timeMin: 22.98, hr: 171, notes: 'Perth · fast' },
+    { date: '2026-03-17', type: 'long', distance: 10.01, timeMin: 45.48, hr: 172, notes: 'Perth' },
+    { date: '2026-03-18', type: 'run', distance: 6.97, timeMin: 36.28, hr: 174, notes: 'Perth' },
+    { date: '2026-03-23', type: 'run', distance: 6.05, timeMin: 37.75, hr: 172, notes: 'Perth' },
+    { date: '2026-03-30', type: 'run', distance: 6.31, timeMin: 29.15, hr: 174, notes: 'Perth · strong' },
+    { date: '2026-04-02', type: 'run', distance: 4.69, timeMin: 25.48, hr: 154, notes: 'Perth · easy' },
+    { date: '2026-04-06', type: 'run', distance: 6.16, timeMin: 29.42, hr: 171, notes: 'Denmark · hills 133m' },
+    { date: '2026-04-11', type: 'run', distance: 6.50, timeMin: 42.57, hr: 134, notes: 'Perth · easy' },
+    { date: '2026-04-15', type: 'run', distance: 6.94, timeMin: 29.20, hr: 177, notes: 'Perth · fast 4:13/km' },
+    { date: '2026-04-18', type: 'run', distance: 8.02, timeMin: 35.48, hr: 173, notes: 'Perth · 4:25/km' },
+    { date: '2026-04-19', type: 'run', distance: 6.48, timeMin: 38.08, hr: 143, notes: 'Perth · easy' },
+    { date: '2026-04-22', type: 'run', distance: 5.12, timeMin: 32.68, hr: 132, notes: 'Perth · easy' },
+    { date: '2026-04-23', type: 'run', distance: 6.50, timeMin: 33.62, hr: 162, notes: 'Treadmill' },
+    { date: '2026-04-27', type: 'long', distance: 11.67, timeMin: 52.53, hr: 171, notes: 'Perth · 4:30/km · pre-plan' }
+  ];
+
+  // Storage: localStorage when available (local file or hosted page),
+  // falls back to in-memory only (artifact sandbox) — no errors either way.
+  let storageAvailable = false;
+  try {
+    const t = '__test__';
+    localStorage.setItem(t, t);
+    localStorage.removeItem(t);
+    storageAvailable = true;
+  } catch (e) {
+    storageAvailable = false;
+  }
+
+  function loadSessions() {
+    if (!storageAvailable) return [...SEED_DATA];
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+    return [...SEED_DATA];
+  }
+
+  function saveSessions() {
+    if (!storageAvailable) return;
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions)); } catch (e) {}
+  }
+
+  let sessions = loadSessions();
+
+  // ============ HELPERS ============
+  function paceFromSession(s) {
+    if (!s.distance || !s.timeMin) return null;
+    return s.timeMin / s.distance; // min per km
+  }
+  function paceLabel(p) {
+    if (!p) return '—';
+    const m = Math.floor(p);
+    const sec = Math.round((p - m) * 60);
+    return `${m}:${String(sec).padStart(2, '0')}`;
+  }
+  function timeLabel(min) {
+    const m = Math.floor(min);
+    const sec = Math.round((min - m) * 60);
+    return `${m}:${String(sec).padStart(2, '0')}`;
+  }
+  function parseTimeToMin(str) {
+    if (!str) return null;
+    const parts = str.split(':');
+    if (parts.length !== 2) return null;
+    const m = parseInt(parts[0], 10);
+    const s = parseInt(parts[1], 10);
+    if (isNaN(m) || isNaN(s)) return null;
+    return m + s / 60;
+  }
+  function getCurrentWeek() {
+    const today = new Date();
+    const diffDays = Math.floor((today - START_DATE) / (1000 * 60 * 60 * 24));
+    const week = Math.floor(diffDays / 7) + 1;
+    return Math.max(1, Math.min(8, week));
+  }
+  function fmtDate(iso) {
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-AU', { day: '2-digit', month: 'short' }).toUpperCase();
+  }
+
+  // ============ HERO STATS ============
+  function updateHero() {
+    const today = new Date();
+    document.getElementById('today-date').textContent =
+      today.toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
+
+    const week = getCurrentWeek();
+    document.getElementById('stat-week').innerHTML = `${week}<span class="unit">/8</span>`;
+    document.getElementById('stat-phase').textContent = PHASES[week];
+
+    const planSessions = sessions.filter(s => new Date(s.date) >= START_DATE);
+    const runs = planSessions.filter(s => s.type !== 'gym').length;
+    const gyms = planSessions.filter(s => s.type === 'gym').length;
+    document.getElementById('stat-sessions').textContent = planSessions.length;
+    document.getElementById('stat-runs').textContent = `${runs} runs · ${gyms} lifts`;
+
+    const totalDist = planSessions.reduce((sum, s) => sum + (s.distance || 0), 0);
+    const totalTime = planSessions.reduce((sum, s) => sum + (s.timeMin || 0), 0);
+    document.getElementById('stat-distance').innerHTML =
+      `${totalDist.toFixed(1)}<span class="unit">km</span>`;
+    const h = Math.floor(totalTime / 60);
+    const m = Math.floor(totalTime % 60);
+    document.getElementById('stat-time').textContent = `${h}h ${m}m total`;
+  }
+
+  // ============ WEEK GRID ============
+  function renderWeekGrid() {
+    const grid = document.getElementById('week-grid');
+    const current = getCurrentWeek();
+    grid.innerHTML = '';
+    for (let i = 1; i <= 8; i++) {
+      const weekStart = new Date(START_DATE);
+      weekStart.setDate(weekStart.getDate() + (i - 1) * 7);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+
+      const weekSessions = sessions.filter(s => {
+        const d = new Date(s.date);
+        return d >= weekStart && d <= weekEnd;
+      });
+      const complete = weekSessions.length >= 4;
+
+      const div = document.createElement('div');
+      div.className = `week ${i === current ? 'active' : ''} ${complete ? 'complete' : ''}`;
+      div.innerHTML = `
+        <div class="label">Week</div>
+        <div class="num">${String(i).padStart(2, '0')}</div>
+        <div class="phase">${PHASES[i].split(' ')[0]}</div>
+      `;
+      grid.appendChild(div);
+    }
+  }
+
+  // ============ CHARTS ============
+  let paceChart, hrPaceChart, volumeChart;
+
+  const chartTextColor = '#8a9690';
+  const chartGridColor = '#1f2925';
+  Chart.defaults.color = chartTextColor;
+  Chart.defaults.borderColor = chartGridColor;
+  Chart.defaults.font.family = "'JetBrains Mono', monospace";
+  Chart.defaults.font.size = 10;
+
+  function renderPaceChart() {
+    const ctx = document.getElementById('paceChart').getContext('2d');
+    const sorted = [...sessions]
+      .filter(s => paceFromSession(s) !== null)
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    const data = sorted.map(s => ({
+      x: s.date,
+      y: paceFromSession(s),
+      type: s.type
+    }));
+
+    const colorByType = {
+      tempo: '#4ad6c8',
+      intervals: '#ff6b35',
+      long: '#e8efe9',
+      run: '#c8ff3e',
+      gym: '#8a9690'
+    };
+
+    if (paceChart) paceChart.destroy();
+    paceChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        datasets: [{
+          label: 'Pace (min/km)',
+          data: data,
+          parsing: false,
+          borderColor: '#c8ff3e',
+          borderWidth: 1.5,
+          tension: 0.25,
+          pointRadius: 5,
+          pointHoverRadius: 7,
+          pointBackgroundColor: data.map(d => colorByType[d.type] || '#c8ff3e'),
+          pointBorderColor: '#0a0e0c',
+          pointBorderWidth: 1.5
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#0a0e0c',
+            borderColor: '#c8ff3e', borderWidth: 1,
+            padding: 12, titleFont: { size: 11 }, bodyFont: { size: 11 },
+            callbacks: {
+              title: (items) => fmtDate(items[0].raw.x),
+              label: (item) => `${item.raw.type.toUpperCase()} · ${paceLabel(item.raw.y)} /km`
+            }
+          }
+        },
+        scales: {
+          x: { type: 'time', time: { unit: 'week' }, grid: { color: chartGridColor }, ticks: { color: chartTextColor } },
+          y: {
+            reverse: true, grid: { color: chartGridColor },
+            ticks: {
+              color: chartTextColor,
+              callback: (v) => paceLabel(v)
+            },
+            suggestedMin: 3.5, suggestedMax: 7
+          }
+        }
+      }
+    });
+  }
+
+  function renderHrPaceChart() {
+    const ctx = document.getElementById('hrPaceChart').getContext('2d');
+    const data = sessions
+      .filter(s => s.hr && paceFromSession(s))
+      .map(s => ({ x: s.hr, y: paceFromSession(s), type: s.type }));
+
+    const colorByType = {
+      tempo: '#4ad6c8', intervals: '#ff6b35', long: '#e8efe9', run: '#c8ff3e', gym: '#8a9690'
+    };
+
+    if (hrPaceChart) hrPaceChart.destroy();
+    hrPaceChart = new Chart(ctx, {
+      type: 'scatter',
+      data: {
+        datasets: [{
+          data: data,
+          backgroundColor: data.map(d => colorByType[d.type] || '#c8ff3e'),
+          borderColor: '#0a0e0c', borderWidth: 1,
+          pointRadius: 6, pointHoverRadius: 8
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#0a0e0c', borderColor: '#c8ff3e', borderWidth: 1, padding: 12,
+            callbacks: {
+              label: (item) => `HR ${item.raw.x} · ${paceLabel(item.raw.y)} /km`
+            }
+          }
+        },
+        scales: {
+          x: { title: { display: true, text: 'AVG HR', color: chartTextColor, font: { size: 10, weight: 500 } }, grid: { color: chartGridColor } },
+          y: {
+            reverse: true,
+            title: { display: true, text: 'PACE /KM', color: chartTextColor, font: { size: 10, weight: 500 } },
+            ticks: { callback: (v) => paceLabel(v) },
+            grid: { color: chartGridColor }
+          }
+        }
+      }
+    });
+  }
+
+  function renderVolumeChart() {
+    const ctx = document.getElementById('volumeChart').getContext('2d');
+
+    // Group by week starting from a baseline 6 weeks before start date
+    const baseline = new Date(START_DATE);
+    baseline.setDate(baseline.getDate() - 42);
+
+    const weeks = [];
+    for (let i = 0; i < 14; i++) {
+      const wkStart = new Date(baseline);
+      wkStart.setDate(wkStart.getDate() + i * 7);
+      const wkEnd = new Date(wkStart);
+      wkEnd.setDate(wkEnd.getDate() + 6);
+      const total = sessions
+        .filter(s => {
+          const d = new Date(s.date);
+          return d >= wkStart && d <= wkEnd && s.type !== 'gym';
+        })
+        .reduce((sum, s) => sum + (s.distance || 0), 0);
+      weeks.push({
+        label: wkStart.toLocaleDateString('en-AU', { day: '2-digit', month: 'short' }),
+        total: total,
+        isPlan: wkStart >= START_DATE
+      });
+    }
+
+    if (volumeChart) volumeChart.destroy();
+    volumeChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: weeks.map(w => w.label),
+        datasets: [{
+          data: weeks.map(w => w.total),
+          backgroundColor: weeks.map(w => w.isPlan ? '#c8ff3e' : '#2a3631'),
+          borderRadius: 2, barThickness: 24
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#0a0e0c', borderColor: '#c8ff3e', borderWidth: 1, padding: 12,
+            callbacks: { label: (item) => `${item.raw.toFixed(1)} km` }
+          }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: chartTextColor } },
+          y: { grid: { color: chartGridColor }, ticks: { color: chartTextColor, callback: (v) => v + 'km' } }
+        }
+      }
+    });
+  }
+
+  // ============ LOG LIST ============
+  function renderLog() {
+    const list = document.getElementById('log-entries');
+    const sorted = [...sessions].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (sorted.length === 0) {
+      list.innerHTML = '<div class="empty">No sessions yet — log your first one above</div>';
+      return;
+    }
+
+    list.innerHTML = sorted.map(s => {
+      const pace = paceFromSession(s);
+      const stats = [];
+      if (s.distance) stats.push(`<span>${s.distance.toFixed(2)}km</span>`);
+      if (s.timeMin) stats.push(`<span>${timeLabel(s.timeMin)}</span>`);
+      if (pace) stats.push(`<span>${paceLabel(pace)}/km</span>`);
+      if (s.hr) stats.push(`HR <span>${s.hr}</span>`);
+
+      const idx = sessions.indexOf(s);
+      return `
+        <div class="log-entry">
+          <button class="del" data-idx="${idx}" title="Remove">×</button>
+          <div class="top">
+            <div class="type ${s.type}">${s.type}</div>
+            <div class="date">${fmtDate(s.date)}</div>
+          </div>
+          <div class="stats">${stats.join(' · ')}</div>
+          ${s.notes ? `<div class="note">${s.notes}</div>` : ''}
+        </div>
+      `;
+    }).join('');
+
+    list.querySelectorAll('.del').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(e.target.dataset.idx, 10);
+        if (confirm('Remove this session?')) {
+          sessions.splice(idx, 1);
+          saveSessions();
+          renderAll();
+        }
+      });
+    });
+  }
+
+  // ============ FORM ============
+  function setupForm() {
+    document.getElementById('f-date').valueAsDate = new Date();
+
+    document.getElementById('btn-add').addEventListener('click', () => {
+      const date = document.getElementById('f-date').value;
+      const type = document.getElementById('f-type').value;
+      const dist = parseFloat(document.getElementById('f-dist').value);
+      const timeStr = document.getElementById('f-time').value;
+      const hr = parseInt(document.getElementById('f-hr').value, 10);
+      const notes = document.getElementById('f-notes').value.trim();
+
+      if (!date) { alert('Pick a date'); return; }
+
+      const session = { date, type };
+      if (!isNaN(dist)) session.distance = dist;
+      const tMin = parseTimeToMin(timeStr);
+      if (tMin) session.timeMin = tMin;
+      if (!isNaN(hr)) session.hr = hr;
+      if (notes) session.notes = notes;
+
+      sessions.push(session);
+      saveSessions();
+      renderAll();
+
+      // reset
+      document.getElementById('f-dist').value = '';
+      document.getElementById('f-time').value = '';
+      document.getElementById('f-hr').value = '';
+      document.getElementById('f-notes').value = '';
+    });
+
+    document.getElementById('btn-export').addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(sessions, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `sub19-tracker-${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    document.getElementById('btn-import').addEventListener('click', () => {
+      document.getElementById('f-import').click();
+    });
+
+    document.getElementById('f-import').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const parsed = JSON.parse(evt.target.result);
+          if (!Array.isArray(parsed)) throw new Error('Invalid format');
+          sessions = parsed;
+          renderAll();
+          alert(`Imported ${parsed.length} sessions`);
+        } catch (err) {
+          alert('Could not read that file — make sure it\'s a tracker JSON export');
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    });
+  }
+
+  // ============ INIT ============
+  function renderAll() {
+    updateHero();
+    renderWeekGrid();
+    renderPaceChart();
+    renderHrPaceChart();
+    renderVolumeChart();
+    renderLog();
+  }
+
+  // Show storage status in footer
+  const statusEl = document.getElementById('storage-status');
+  if (statusEl) {
+    statusEl.textContent = storageAvailable
+      ? 'Storage · auto-saving to this device'
+      : 'Storage · in-memory only · use Export to save';
+    statusEl.style.color = storageAvailable ? 'var(--accent-dim)' : 'var(--warm)';
+  }
+
+  setupForm();
+  renderAll();
+</script>
+</body>
+</html>
