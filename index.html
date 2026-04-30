@@ -2,352 +2,511 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sub-19 Project · Training Tracker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0e0c">
+<title>Sub-19</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,800;1,9..144,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <style>
   :root {
-    --bg: #0a0e0c;
-    --bg-elev: #111614;
-    --bg-card: #161c19;
-    --line: #1f2925;
-    --line-bright: #2a3631;
+    --bg: #050706;
+    --bg-card: rgba(20, 26, 23, 0.7);
+    --bg-card-solid: #141a17;
+    --line: rgba(255, 255, 255, 0.08);
+    --line-bright: rgba(255, 255, 255, 0.15);
     --ink: #e8efe9;
     --ink-dim: #8a9690;
     --ink-faint: #4a5651;
     --accent: #c8ff3e;
-    --accent-dim: #8aa829;
+    --accent-glow: rgba(200, 255, 62, 0.4);
     --warm: #ff6b35;
     --cool: #4ad6c8;
     --danger: #ff4d6d;
+    --safe-top: env(safe-area-inset-top);
+    --safe-bot: env(safe-area-inset-bottom);
   }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
   html, body {
     background: var(--bg);
     color: var(--ink);
-    font-family: 'Fraunces', Georgia, serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Fraunces', Georgia, serif;
     font-weight: 400;
-    line-height: 1.5;
+    line-height: 1.45;
     min-height: 100vh;
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
   }
 
-  body {
-    background-image:
-      radial-gradient(circle at 20% 0%, rgba(200, 255, 62, 0.04) 0%, transparent 40%),
-      radial-gradient(circle at 80% 100%, rgba(74, 214, 200, 0.03) 0%, transparent 40%);
+  body::before {
+    content: '';
+    position: fixed;
+    inset: -50%;
+    background:
+      radial-gradient(ellipse 60% 50% at 30% 20%, rgba(200, 255, 62, 0.12) 0%, transparent 50%),
+      radial-gradient(ellipse 70% 60% at 80% 70%, rgba(74, 214, 200, 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse 50% 40% at 50% 100%, rgba(255, 107, 53, 0.05) 0%, transparent 50%);
+    z-index: -2;
+    animation: drift 30s ease-in-out infinite;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: -1;
+    opacity: 0.5;
+  }
+  @keyframes drift {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    33% { transform: translate(3%, -2%) rotate(2deg); }
+    66% { transform: translate(-2%, 3%) rotate(-1deg); }
   }
 
-  .grain {
-    position: fixed; inset: 0; pointer-events: none; z-index: 100; opacity: 0.4;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  }
-
-  .wrap {
-    max-width: 1400px;
+  .app {
+    max-width: 600px;
     margin: 0 auto;
-    padding: 32px 40px 80px;
+    padding: calc(16px + var(--safe-top)) 16px calc(40px + var(--safe-bot));
   }
 
-  /* HEADER */
-  .header {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: end;
-    gap: 24px;
-    padding-bottom: 32px;
-    border-bottom: 1px solid var(--line);
-    margin-bottom: 40px;
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding: 0 4px;
   }
-
-  .eyebrow {
+  .brand {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 0.04em;
+    line-height: 1;
+  }
+  .brand .accent {
+    color: var(--accent);
+    font-style: italic;
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+  }
+  .brand-meta {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    font-weight: 500;
+    font-size: 9px;
     letter-spacing: 0.18em;
     color: var(--ink-dim);
     text-transform: uppercase;
-    margin-bottom: 16px;
-    display: flex;
-    gap: 12px;
-    align-items: center;
+    text-align: right;
+    line-height: 1.5;
   }
-  .eyebrow::before {
+  .brand-meta .live {
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+  .brand-meta .live::before {
     content: '';
-    width: 6px; height: 6px;
+    width: 5px; height: 5px;
     border-radius: 50%;
     background: var(--accent);
-    box-shadow: 0 0 12px var(--accent);
+    box-shadow: 0 0 8px var(--accent);
     animation: pulse 2s ease-in-out infinite;
   }
   @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(0.85); }
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
   }
 
-  h1 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(56px, 9vw, 120px);
-    line-height: 0.85;
-    letter-spacing: -0.02em;
-    color: var(--ink);
-  }
-  h1 .accent {
-    color: var(--accent);
-    font-style: italic;
-    font-family: 'Fraunces', serif;
-    font-weight: 400;
-    letter-spacing: -0.04em;
-  }
-
-  .header-meta {
-    text-align: right;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    color: var(--ink-dim);
-    line-height: 1.8;
-  }
-  .header-meta .val { color: var(--ink); font-weight: 500; }
-
-  /* HERO STATS */
-  .hero {
-    display: grid;
-    grid-template-columns: 1.4fr 1fr 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 48px;
-  }
-
-  .hero-card {
-    background: var(--bg-elev);
+  .progress-pill {
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--line);
-    padding: 28px 24px;
+    border-radius: 100px;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .progress-pill .left { color: var(--ink-dim); }
+  .progress-pill .left strong { color: var(--ink); font-weight: 700; }
+  .progress-pill .target { color: var(--accent); font-weight: 700; }
+
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 2px;
+    margin-bottom: 28px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent) 0%, #4ad6c8 100%);
+    border-radius: 2px;
+    box-shadow: 0 0 12px var(--accent-glow);
+    transition: width 0.6s ease;
+  }
+
+  .today {
+    background: linear-gradient(160deg, rgba(200, 255, 62, 0.08) 0%, var(--bg-card) 60%);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--line-bright);
+    border-radius: 24px;
+    padding: 24px 22px;
+    margin-bottom: 16px;
     position: relative;
     overflow: hidden;
   }
-  .hero-card.primary {
-    background: linear-gradient(135deg, var(--accent) 0%, #a3d52e 100%);
-    color: var(--bg);
-    border: none;
+  .today.rest {
+    background: var(--bg-card);
   }
-  .hero-card .label {
+
+  .today-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     font-family: 'JetBrains Mono', monospace;
     font-size: 10px;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    opacity: 0.6;
-    margin-bottom: 16px;
+    color: var(--accent);
+    margin-bottom: 12px;
+    background: rgba(200, 255, 62, 0.1);
+    padding: 5px 10px;
+    border-radius: 100px;
+    border: 1px solid rgba(200, 255, 62, 0.2);
   }
-  .hero-card .num {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 64px;
-    line-height: 0.9;
-    letter-spacing: -0.01em;
+  .today.rest .today-tag {
+    color: var(--ink-dim);
+    background: rgba(255,255,255,0.04);
+    border-color: var(--line);
   }
-  .hero-card .num .unit {
-    font-size: 22px;
-    opacity: 0.55;
-    margin-left: 4px;
-    letter-spacing: 0;
-  }
-  .hero-card .sub {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    margin-top: 12px;
-    opacity: 0.7;
-  }
-  .hero-card.primary .label,
-  .hero-card.primary .sub { opacity: 0.7; }
 
-  .hero-card .pb-display {
+  .today-title {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 84px;
-    line-height: 0.85;
+    font-size: 44px;
+    line-height: 0.92;
+    letter-spacing: 0.01em;
+    margin-bottom: 8px;
   }
-  .hero-card .pb-target {
+  .today-title .accent { color: var(--accent); font-style: italic; font-family: 'Fraunces', serif; font-weight: 600; }
+
+  .today-sub {
     font-family: 'Fraunces', serif;
     font-style: italic;
-    font-size: 18px;
-    margin-top: 6px;
-    opacity: 0.75;
+    font-size: 15px;
+    color: var(--ink-dim);
+    line-height: 1.5;
+    margin-bottom: 20px;
   }
 
-  /* SECTION HEADERS */
-  .section-head {
-    display: flex;
-    align-items: baseline;
-    gap: 24px;
-    margin-bottom: 24px;
-    margin-top: 56px;
+  .key-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 18px;
   }
-  .section-head h2 {
+  .key-stat {
+    background: rgba(0,0,0,0.3);
+    padding: 14px 16px;
+  }
+  .key-stat .ks-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-bottom: 4px;
+  }
+  .key-stat .ks-value {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 36px;
-    letter-spacing: 0.02em;
+    font-size: 22px;
     line-height: 1;
+    color: var(--ink);
   }
-  .section-head .num {
+  .key-stat .ks-value .em { color: var(--accent); }
+
+  details { margin-top: 4px; }
+  details summary {
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
-    color: var(--accent);
-    letter-spacing: 0.2em;
-  }
-  .section-head .rule {
-    flex: 1;
-    height: 1px;
-    background: var(--line);
-  }
-
-  /* WEEK GRID */
-  .week-grid {
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    gap: 8px;
-    margin-bottom: 16px;
-  }
-
-  .week {
-    background: var(--bg-elev);
-    border: 1px solid var(--line);
-    padding: 16px 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    padding: 12px 0;
     cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--line);
   }
-  .week:hover { border-color: var(--accent); transform: translateY(-2px); }
-  .week.active {
+  details summary::-webkit-details-marker { display: none; }
+  details summary::after {
+    content: '+';
+    font-size: 18px;
+    color: var(--accent);
+    transition: transform 0.2s;
+  }
+  details[open] summary::after { content: '−'; }
+
+  .lift-list { padding: 8px 0 4px; }
+  .lift-list li {
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+  .lift-list li:last-child { border-bottom: none; }
+  .lift-list .name { color: var(--ink); flex: 1; padding-right: 12px; }
+  .lift-list .reps { color: var(--accent); white-space: nowrap; font-weight: 700; }
+
+  .coach-note {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--ink-dim);
+    line-height: 1.55;
+    padding: 14px 0 4px;
+  }
+
+  .quick-log {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 18px;
+    padding: 18px;
+    width: 100%;
+    margin-bottom: 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 8px 32px rgba(200, 255, 62, 0.25);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    transition: transform 0.15s;
+  }
+  .quick-log:active { transform: scale(0.97); }
+  .quick-log .plus { font-size: 18px; line-height: 1; }
+
+  .section-h {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin: 28px 4px 14px;
+  }
+  .section-h h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 0.04em;
+    line-height: 1;
+  }
+  .section-h .meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+
+  .weeks {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 20px;
+    padding: 0 4px;
+  }
+  .week-dot {
+    flex: 1;
+    height: 36px;
+    background: var(--bg-card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink-dim);
+    backdrop-filter: blur(10px);
+    transition: all 0.2s;
+  }
+  .week-dot.done {
+    background: rgba(200, 255, 62, 0.15);
+    color: var(--accent);
+    border-color: rgba(200, 255, 62, 0.3);
+  }
+  .week-dot.current {
     background: var(--accent);
     color: var(--bg);
     border-color: var(--accent);
+    box-shadow: 0 0 16px var(--accent-glow);
   }
-  .week.complete::after {
-    content: '✓';
-    position: absolute;
-    top: 6px; right: 8px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    color: var(--accent);
-  }
-  .week.active.complete::after { color: var(--bg); }
-
-  .week .label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    opacity: 0.6;
-  }
-  .week .num {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 32px;
-    line-height: 1;
-    margin-top: 4px;
-  }
-  .week .phase {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    margin-top: 6px;
-    opacity: 0.5;
+  .week-dot.race {
+    background: linear-gradient(135deg, var(--warm), var(--accent));
+    color: var(--bg);
+    border-color: var(--accent);
   }
 
-  /* CHARTS */
-  .charts {
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 16px;
-    margin-bottom: 16px;
-  }
   .chart-card {
     background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--line);
-    padding: 24px;
-    min-height: 320px;
+    border-radius: 20px;
+    padding: 20px 18px;
+    margin-bottom: 16px;
   }
-  .chart-card.full { grid-column: 1 / -1; }
-  .chart-card h3 {
+  .chart-wrap { position: relative; height: 200px; }
+
+  .log-list {
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 6px 18px;
+    margin-bottom: 16px;
+  }
+  .log-entry {
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  .log-entry:last-child { border-bottom: none; }
+  .log-entry .l-left { flex: 1; min-width: 0; }
+  .log-entry .l-type {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 22px;
+    font-size: 16px;
+    letter-spacing: 0.04em;
+    margin-bottom: 2px;
+  }
+  .log-entry .l-type.tempo { color: var(--cool); }
+  .log-entry .l-type.intervals { color: var(--warm); }
+  .log-entry .l-type.long { color: var(--ink); }
+  .log-entry .l-type.run { color: var(--accent); }
+  .log-entry .l-type.gym { color: var(--ink-dim); }
+  .log-entry .l-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-dim);
+    letter-spacing: 0.06em;
+  }
+  .log-entry .l-meta .em { color: var(--ink); }
+  .log-entry .l-date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-faint);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .log-entry .l-del {
+    background: none;
+    border: none;
+    color: var(--ink-faint);
+    font-size: 18px;
+    padding: 4px 8px;
+    cursor: pointer;
+    margin-left: 4px;
+  }
+  .log-entry .l-del:active { color: var(--danger); }
+  .log-empty {
+    text-align: center;
+    padding: 32px 16px;
+    color: var(--ink-faint);
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 13px;
+  }
+
+  .modal-bg {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-bg.open { opacity: 1; pointer-events: auto; }
+
+  .modal {
+    background: var(--bg-card-solid);
+    border: 1px solid var(--line-bright);
+    border-bottom: none;
+    border-radius: 28px 28px 0 0;
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 24px 22px calc(24px + var(--safe-bot));
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .modal-bg.open .modal { transform: translateY(0); }
+
+  .modal-handle {
+    width: 36px;
+    height: 4px;
+    background: var(--line-bright);
+    border-radius: 2px;
+    margin: -8px auto 16px;
+  }
+  .modal h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
     letter-spacing: 0.02em;
     margin-bottom: 4px;
   }
-  .chart-card .desc {
+  .modal .m-sub {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
+    font-size: 10px;
     color: var(--ink-dim);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
     margin-bottom: 20px;
   }
-  .chart-wrap { position: relative; height: 260px; }
 
-  /* SESSION TARGETS TABLE */
-  .targets {
-    background: var(--bg-card);
-    border: 1px solid var(--line);
-    padding: 28px 32px;
-  }
-  .targets table { width: 100%; border-collapse: collapse; }
-  .targets th, .targets td {
-    text-align: left;
-    padding: 14px 12px;
-    border-bottom: 1px solid var(--line);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
-  }
-  .targets th {
-    font-size: 10px;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--ink-dim);
-    font-weight: 500;
-  }
-  .targets tr:last-child td { border-bottom: none; }
-  .targets td.zone { color: var(--ink); font-weight: 500; }
-  .targets td.pace { color: var(--accent); font-weight: 700; }
-  .targets td.feel { font-family: 'Fraunces', serif; font-style: italic; color: var(--ink-dim); }
-
-  /* SESSION LOG */
-  .log-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 24px;
-  }
-
-  .log-form {
-    background: var(--bg-card);
-    border: 1px solid var(--line);
-    padding: 28px;
-  }
-  .log-form h3 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 24px;
-    margin-bottom: 4px;
-  }
-  .log-form .desc {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    color: var(--ink-dim);
-    margin-bottom: 24px;
-  }
-
-  .form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 12px;
-  }
-  .form-row.single { grid-template-columns: 1fr; }
-  .form-row.three { grid-template-columns: 1fr 1fr 1fr; }
-
+  .field { margin-bottom: 14px; }
   .field label {
     display: block;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.14em;
+    font-size: 9px;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
     color: var(--ink-dim);
     margin-bottom: 6px;
@@ -355,776 +514,461 @@
   .field input, .field select, .field textarea {
     width: 100%;
     background: var(--bg);
-    border: 1px solid var(--line-bright);
+    border: 1px solid var(--line);
     color: var(--ink);
-    padding: 10px 12px;
+    padding: 14px 14px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
-    transition: border 0.15s;
+    font-size: 14px;
+    border-radius: 12px;
+    -webkit-appearance: none;
+    appearance: none;
   }
   .field input:focus, .field select:focus, .field textarea:focus {
     outline: none;
     border-color: var(--accent);
   }
-  .field textarea { resize: vertical; min-height: 60px; }
+  .field textarea { resize: none; min-height: 70px; font-family: -apple-system, 'Fraunces', serif; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 
-  .btn {
+  .modal-btn {
     background: var(--accent);
     color: var(--bg);
     border: none;
-    padding: 14px 24px;
+    padding: 16px;
+    border-radius: 14px;
+    width: 100%;
     font-family: 'JetBrains Mono', monospace;
     font-size: 12px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
     font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
     cursor: pointer;
-    width: 100%;
-    margin-top: 12px;
-    transition: all 0.15s;
+    margin-top: 8px;
   }
-  .btn:hover { background: var(--ink); transform: translateY(-1px); }
-  .btn.secondary {
+  .modal-btn.secondary {
     background: transparent;
     color: var(--ink-dim);
     border: 1px solid var(--line-bright);
+    margin-top: 8px;
   }
-  .btn.secondary:hover { color: var(--ink); border-color: var(--ink-dim); background: transparent; }
 
-  .log-list {
+  .menu-btn {
     background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--line);
-    padding: 28px;
-    max-height: 600px;
-    overflow-y: auto;
-  }
-  .log-list h3 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 24px;
-    margin-bottom: 4px;
-  }
-  .log-list .desc {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
+    border-radius: 100px;
     color: var(--ink-dim);
-    margin-bottom: 20px;
-  }
-  .log-entry {
-    border-left: 2px solid var(--line-bright);
-    padding: 12px 16px;
-    margin-bottom: 12px;
-    transition: all 0.15s;
-    position: relative;
-  }
-  .log-entry:hover { border-left-color: var(--accent); background: var(--bg-elev); }
-  .log-entry .top {
-    display: flex; justify-content: space-between; align-items: baseline;
-    margin-bottom: 6px;
-  }
-  .log-entry .type {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 18px;
-    letter-spacing: 0.02em;
-  }
-  .log-entry .type.run { color: var(--accent); }
-  .log-entry .type.tempo { color: var(--cool); }
-  .log-entry .type.intervals { color: var(--warm); }
-  .log-entry .type.long { color: var(--ink); }
-  .log-entry .type.gym { color: var(--ink-dim); }
-  .log-entry .date {
+    padding: 10px 18px;
     font-family: 'JetBrains Mono', monospace;
     font-size: 10px;
-    color: var(--ink-dim);
-    letter-spacing: 0.1em;
-  }
-  .log-entry .stats {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    color: var(--ink-dim);
-    line-height: 1.7;
-  }
-  .log-entry .stats span { color: var(--ink); }
-  .log-entry .note {
-    font-family: 'Fraunces', serif;
-    font-style: italic;
-    font-size: 12px;
-    color: var(--ink-dim);
-    margin-top: 6px;
-  }
-  .log-entry .del {
-    position: absolute;
-    top: 8px; right: 8px;
-    background: none; border: none;
-    color: var(--ink-faint);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
     cursor: pointer;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    padding: 2px 6px;
-  }
-  .log-entry .del:hover { color: var(--danger); }
-  .empty {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--ink-faint);
-    font-family: 'Fraunces', serif;
-    font-style: italic;
-    font-size: 14px;
-  }
-
-  /* WEEKLY SCHEDULE */
-  .schedule {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    margin: 4px 4px 0 0;
+    display: inline-flex;
+    align-items: center;
     gap: 8px;
   }
-  .day {
-    background: var(--bg-elev);
-    border: 1px solid var(--line);
-    padding: 18px 14px;
-    min-height: 140px;
-  }
-  .day.heavy { border-color: var(--accent-dim); background: linear-gradient(180deg, var(--bg-elev) 0%, rgba(200, 255, 62, 0.04) 100%); }
-  .day .dow {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 22px;
-    letter-spacing: 0.05em;
-    margin-bottom: 4px;
-  }
-  .day.heavy .dow { color: var(--accent); }
-  .day .ctx {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    color: var(--ink-faint);
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    margin-bottom: 12px;
-  }
-  .day .session {
-    font-family: 'Fraunces', serif;
-    font-size: 13px;
-    line-height: 1.4;
-    margin-bottom: 6px;
-  }
-  .day .session strong {
-    font-weight: 600;
-    color: var(--ink);
-    display: block;
-    font-size: 14px;
-    margin-bottom: 2px;
-  }
-  .day .session .det {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    color: var(--ink-dim);
-    line-height: 1.5;
-  }
+  .menu-btn:active { background: var(--line); }
+  .menu-row { padding: 4px; margin-bottom: 8px; }
 
-  /* PROGRESSION TABLE */
-  .progression {
-    background: var(--bg-card);
-    border: 1px solid var(--line);
-    padding: 32px;
-    overflow-x: auto;
-  }
-  .progression table { width: 100%; border-collapse: collapse; min-width: 700px; }
-  .progression th, .progression td {
-    text-align: left;
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--line);
-  }
-  .progression th {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--ink-dim);
-    font-weight: 500;
-  }
-  .progression td {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-  }
-  .progression td.wk {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 22px;
-    color: var(--accent);
-    width: 60px;
-  }
-  .progression td.phase-tag {
-    font-size: 9px;
-    letter-spacing: 0.14em;
-    color: var(--ink-dim);
-    text-transform: uppercase;
-  }
-  .progression tr.race { background: rgba(200, 255, 62, 0.04); }
-  .progression tr.race td.wk { color: var(--warm); }
-
-  /* FOOTER */
-  .footer {
-    margin-top: 80px;
-    padding-top: 32px;
-    border-top: 1px solid var(--line);
-    display: flex;
-    justify-content: space-between;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.14em;
-    color: var(--ink-faint);
-    text-transform: uppercase;
-  }
-
-  /* RESPONSIVE */
-  @media (max-width: 1024px) {
-    .hero { grid-template-columns: 1fr 1fr; }
-    .charts { grid-template-columns: 1fr; }
-    .log-grid { grid-template-columns: 1fr; }
-    .schedule { grid-template-columns: repeat(7, minmax(120px, 1fr)); overflow-x: auto; }
-    .week-grid { grid-template-columns: repeat(4, 1fr); }
-  }
-  @media (max-width: 640px) {
-    .wrap { padding: 24px 20px 60px; }
-    .hero { grid-template-columns: 1fr; }
-    .header { grid-template-columns: 1fr; }
-    .header-meta { text-align: left; }
-    .week-grid { grid-template-columns: repeat(2, 1fr); }
-  }
-
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 8px; height: 8px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--line-bright); border-radius: 4px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--ink-faint); }
+  ::-webkit-scrollbar { width: 0; height: 0; }
 </style>
 </head>
 <body>
-<div class="grain"></div>
 
-<div class="wrap">
-
-  <!-- HEADER -->
-  <header class="header">
-    <div>
-      <div class="eyebrow">Project · 8 Week Build · Mandurah, WA</div>
-      <h1>Sub<span class="accent">·</span>19<br>Project</h1>
-    </div>
-    <div class="header-meta">
-      <div>Athlete · <span class="val">~80kg</span></div>
-      <div>PB · <span class="val">19:30</span></div>
-      <div>Goal · <span class="val">18:59</span></div>
-      <div>Today · <span class="val" id="today-date">—</span></div>
-    </div>
-  </header>
-
-  <!-- HERO STATS -->
-  <section class="hero">
-    <div class="hero-card primary">
-      <div class="label">Target Time</div>
-      <div class="pb-display">18:59</div>
-      <div class="pb-target">3:48 / km · sub-19 5K</div>
-    </div>
-    <div class="hero-card">
-      <div class="label">Current Week</div>
-      <div class="num" id="stat-week">1<span class="unit">/8</span></div>
-      <div class="sub" id="stat-phase">Base + Threshold</div>
-    </div>
-    <div class="hero-card">
-      <div class="label">Sessions Logged</div>
-      <div class="num" id="stat-sessions">0</div>
-      <div class="sub" id="stat-runs">0 runs · 0 lifts</div>
-    </div>
-    <div class="hero-card">
-      <div class="label">Distance Banked</div>
-      <div class="num" id="stat-distance">0<span class="unit">km</span></div>
-      <div class="sub" id="stat-time">0h 0m total</div>
-    </div>
-  </section>
-
-  <!-- WEEK PROGRESS -->
-  <div class="section-head">
-    <span class="num">01</span>
-    <h2>The 8 Weeks</h2>
-    <div class="rule"></div>
-  </div>
-  <div class="week-grid" id="week-grid"></div>
-
-  <!-- CHARTS -->
-  <div class="section-head">
-    <span class="num">02</span>
-    <h2>Trend Lines</h2>
-    <div class="rule"></div>
-  </div>
-  <div class="charts">
-    <div class="chart-card">
-      <h3>Run Pace Over Time</h3>
-      <div class="desc">Lower is faster · target zones shaded</div>
-      <div class="chart-wrap"><canvas id="paceChart"></canvas></div>
-    </div>
-    <div class="chart-card">
-      <h3>HR vs Pace</h3>
-      <div class="desc">Efficiency check · trend down-left = fitter</div>
-      <div class="chart-wrap"><canvas id="hrPaceChart"></canvas></div>
-    </div>
-  </div>
-  <div class="charts">
-    <div class="chart-card full">
-      <h3>Weekly Volume</h3>
-      <div class="desc">Distance per week · keep build gradual, no &gt;15% week-over-week jumps</div>
-      <div class="chart-wrap"><canvas id="volumeChart"></canvas></div>
+<div class="app">
+  <div class="topbar">
+    <div class="brand">SUB<span class="accent">·</span>19</div>
+    <div class="brand-meta">
+      <div class="live">Tracking</div>
+      <div id="today-date">—</div>
     </div>
   </div>
 
-  <!-- PACE TARGETS -->
-  <div class="section-head">
-    <span class="num">03</span>
-    <h2>Pace Zones</h2>
-    <div class="rule"></div>
+  <div class="progress-pill">
+    <div class="left">Week <strong id="pill-week">1</strong> of 8</div>
+    <div class="target">→ 18:59</div>
   </div>
-  <div class="targets">
-    <table>
-      <thead>
-        <tr><th>Zone</th><th>Pace</th><th>HR</th><th>Treadmill</th><th>Feel</th></tr>
-      </thead>
-      <tbody>
-        <tr><td class="zone">Easy / Long</td><td class="pace">5:30 – 6:00 /km</td><td>&lt; 155</td><td>10.0 – 10.9 km/h</td><td class="feel">conversational, full sentences</td></tr>
-        <tr><td class="zone">Tempo</td><td class="pace">4:30 – 4:45 /km</td><td>165 – 172</td><td>12.6 – 13.3 km/h</td><td class="feel">3–4 words at a time</td></tr>
-        <tr><td class="zone">5K Race Pace</td><td class="pace">3:45 – 3:50 /km</td><td>175 – 185</td><td>15.6 – 16.0 km/h</td><td class="feel">one-word answers, focused</td></tr>
-        <tr><td class="zone">Hill / VO2</td><td class="pace">~3:30 /km equiv</td><td>180 – 190</td><td>incline 6–8%</td><td class="feel">all-out, controlled</td></tr>
-      </tbody>
-    </table>
+  <div class="progress-bar">
+    <div class="progress-bar-fill" id="progress-fill" style="width: 12.5%"></div>
   </div>
 
-  <!-- WEEKLY SCHEDULE -->
-  <div class="section-head">
-    <span class="num">04</span>
-    <h2>Weekly Rhythm</h2>
-    <div class="rule"></div>
-  </div>
-  <div class="schedule">
-    <div class="day">
-      <div class="dow">Mon</div>
-      <div class="ctx">Work · 7am–5:30pm</div>
-      <div class="session"><strong>Push</strong><span class="det">Chest · Shoulders · Tri<br>45 min compound</span></div>
-    </div>
-    <div class="day heavy">
-      <div class="dow">Tue</div>
-      <div class="ctx">Uni · time</div>
-      <div class="session"><strong>Hills + Legs</strong><span class="det">8×60s hill hard<br>then leg lift</span></div>
-    </div>
-    <div class="day heavy">
-      <div class="dow">Wed</div>
-      <div class="ctx">Uni · time</div>
-      <div class="session"><strong>Tempo + Core</strong><span class="det">3×8min @ 4:45<br>core/mobility</span></div>
-    </div>
-    <div class="day">
-      <div class="dow">Thu</div>
-      <div class="ctx">Work · 7am–5:30pm</div>
-      <div class="session"><strong>Pull</strong><span class="det">Back · Bi<br>45 min compound</span></div>
-    </div>
-    <div class="day">
-      <div class="dow">Fri</div>
-      <div class="ctx">Work · 7am–5:30pm</div>
-      <div class="session"><strong>Rest / accessory</strong><span class="det">optional 30 min<br>delts · arms · core</span></div>
-    </div>
-    <div class="day heavy">
-      <div class="dow">Sat</div>
-      <div class="ctx">Free</div>
-      <div class="session"><strong>Long Run</strong><span class="det">12–14km easy<br>5:30–6:00 /km</span></div>
-    </div>
-    <div class="day">
-      <div class="dow">Sun</div>
-      <div class="ctx">Free</div>
-      <div class="session"><strong>Rest</strong><span class="det">full recovery</span></div>
-    </div>
-  </div>
+  <div class="today" id="today-card"></div>
 
-  <!-- 8 WEEK PROGRESSION -->
-  <div class="section-head">
-    <span class="num">05</span>
-    <h2>The Build</h2>
-    <div class="rule"></div>
-  </div>
-  <div class="progression">
-    <table>
-      <thead>
-        <tr><th>Wk</th><th>Phase</th><th>Tuesday Speed</th><th>Wednesday Tempo</th><th>Saturday Long</th></tr>
-      </thead>
-      <tbody>
-        <tr><td class="wk">1</td><td class="phase-tag">Base + Threshold</td><td>Hills · 8×60s</td><td>3×8min @ 4:45</td><td>12km easy</td></tr>
-        <tr><td class="wk">2</td><td class="phase-tag">Base + Threshold</td><td>Hills · 8×60s</td><td>3×8min @ 4:45</td><td>13km easy</td></tr>
-        <tr><td class="wk">3</td><td class="phase-tag">Base + Threshold</td><td>Hills · 10×60s</td><td>3×10min @ 4:40</td><td>14km easy</td></tr>
-        <tr><td class="wk">4</td><td class="phase-tag">Threshold + VO2</td><td>4×1km @ 3:55</td><td>3×10min @ 4:40</td><td>14km easy</td></tr>
-        <tr><td class="wk">5</td><td class="phase-tag">Threshold + VO2</td><td>5×1km @ 3:50</td><td>2×15min @ 4:35</td><td>15km easy</td></tr>
-        <tr><td class="wk">6</td><td class="phase-tag">Threshold + VO2</td><td>5×1km @ 3:50 · 75s rec</td><td>2×15min @ 4:35</td><td>16km easy</td></tr>
-        <tr><td class="wk">7</td><td class="phase-tag">Sharpening</td><td>3×1km + 4×400m</td><td>1×20min @ 4:30</td><td>12km easy</td></tr>
-        <tr class="race"><td class="wk">8</td><td class="phase-tag">Taper · Race</td><td>5×400m @ 3:30</td><td>20min easy + strides</td><td>RACE DAY</td></tr>
-      </tbody>
-    </table>
-  </div>
+  <button class="quick-log" id="open-modal">
+    <span class="plus">+</span> Log Today's Session
+  </button>
 
-  <!-- LOG -->
-  <div class="section-head">
-    <span class="num">06</span>
-    <h2>Session Log</h2>
-    <div class="rule"></div>
-  </div>
-  <div class="log-grid">
-    <div class="log-form">
-      <h3>Log a Session</h3>
-      <div class="desc">Track every quality session · feeds the charts above</div>
+  <div class="section-h"><h2>Build</h2><span class="meta">8 Week Plan</span></div>
+  <div class="weeks" id="week-dots"></div>
 
-      <div class="form-row">
-        <div class="field">
-          <label>Date</label>
-          <input type="date" id="f-date">
-        </div>
-        <div class="field">
-          <label>Type</label>
-          <select id="f-type">
-            <option value="tempo">Tempo Run</option>
-            <option value="intervals">Intervals / Hills</option>
-            <option value="long">Long Run</option>
-            <option value="run">Easy Run</option>
-            <option value="gym">Gym</option>
-          </select>
-        </div>
+  <div class="section-h"><h2>Pace</h2><span class="meta">Lower = Faster</span></div>
+  <div class="chart-card"><div class="chart-wrap"><canvas id="paceChart"></canvas></div></div>
+
+  <div class="section-h"><h2>Volume</h2><span class="meta">Per Week · KM</span></div>
+  <div class="chart-card"><div class="chart-wrap"><canvas id="volumeChart"></canvas></div></div>
+
+  <div class="section-h"><h2>Recent</h2><span class="meta">Tap × to remove</span></div>
+  <div class="log-list" id="log-list"></div>
+
+  <div class="menu-row">
+    <button class="menu-btn" id="btn-export">↓ Export</button>
+    <button class="menu-btn" id="btn-import">↑ Import</button>
+    <input type="file" id="f-import" accept="application/json" style="display:none">
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3>Log Session</h3>
+    <div class="m-sub">Quick add</div>
+
+    <div class="field">
+      <label>Type</label>
+      <select id="f-type">
+        <option value="tempo">Tempo Run</option>
+        <option value="intervals">Intervals / Hills</option>
+        <option value="long">Long Run</option>
+        <option value="run">Easy Run</option>
+        <option value="gym">Gym</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Date</label>
+      <input type="date" id="f-date">
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>KM</label>
+        <input type="number" step="0.01" id="f-dist" inputmode="decimal" placeholder="8.5">
       </div>
-
-      <div class="form-row three">
-        <div class="field">
-          <label>Distance (km)</label>
-          <input type="number" step="0.01" id="f-dist" placeholder="e.g. 8.5">
-        </div>
-        <div class="field">
-          <label>Time (mm:ss)</label>
-          <input type="text" id="f-time" placeholder="e.g. 38:20">
-        </div>
-        <div class="field">
-          <label>Avg HR</label>
-          <input type="number" id="f-hr" placeholder="e.g. 168">
-        </div>
+      <div class="field">
+        <label>Time</label>
+        <input type="text" id="f-time" placeholder="38:20">
       </div>
-
-      <div class="form-row single">
-        <div class="field">
-          <label>Notes (rep splits, how it felt, etc.)</label>
-          <textarea id="f-notes" placeholder="Felt strong, last rep fastest..."></textarea>
-        </div>
+      <div class="field">
+        <label>HR</label>
+        <input type="number" id="f-hr" inputmode="numeric" placeholder="168">
       </div>
-
-      <button class="btn" id="btn-add">Log Session</button>
-      <button class="btn secondary" id="btn-export">Export Data (JSON)</button>
-      <button class="btn secondary" id="btn-import">Import Data (JSON)</button>
-      <input type="file" id="f-import" accept="application/json" style="display:none">
     </div>
 
-    <div class="log-list">
-      <h3>Recent Sessions</h3>
-      <div class="desc">Click the × to remove · most recent first</div>
-      <div id="log-entries"></div>
+    <div class="field">
+      <label>Notes</label>
+      <textarea id="f-notes" placeholder="How did it feel?"></textarea>
     </div>
+
+    <button class="modal-btn" id="btn-save">Save Session</button>
+    <button class="modal-btn secondary" id="btn-cancel">Cancel</button>
   </div>
-
-  <!-- FOOTER -->
-  <footer class="footer">
-    <div>Sub-19 Project · Built for the 8 week chase</div>
-    <div id="storage-status">Storage · checking…</div>
-    <div>Pace = 3:48 /km · 18:59 · 80kg</div>
-  </footer>
-
 </div>
 
 <script>
-  // ============ STATE ============
-  const STORAGE_KEY = 'sub19-tracker-v1';
-  const START_DATE = new Date('2026-04-29'); // today, week 1 starts
+  const STORAGE_KEY = 'sub19-tracker-v2';
+  const START_DATE = new Date('2026-04-29');
 
-  const PHASES = {
-    1: 'Base + Threshold', 2: 'Base + Threshold', 3: 'Base + Threshold',
-    4: 'Threshold + VO2', 5: 'Threshold + VO2', 6: 'Threshold + VO2',
-    7: 'Sharpening', 8: 'Taper · Race'
-  };
-
-  // Seed with the user's existing run data so charts have content from day 1
   const SEED_DATA = [
-    { date: '2026-03-08', type: 'run', distance: 4.17, timeMin: 32.57, hr: 154, notes: 'Perth' },
-    { date: '2026-03-12', type: 'run', distance: 5.20, timeMin: 22.98, hr: 171, notes: 'Perth · fast' },
-    { date: '2026-03-17', type: 'long', distance: 10.01, timeMin: 45.48, hr: 172, notes: 'Perth' },
-    { date: '2026-03-18', type: 'run', distance: 6.97, timeMin: 36.28, hr: 174, notes: 'Perth' },
-    { date: '2026-03-23', type: 'run', distance: 6.05, timeMin: 37.75, hr: 172, notes: 'Perth' },
-    { date: '2026-03-30', type: 'run', distance: 6.31, timeMin: 29.15, hr: 174, notes: 'Perth · strong' },
-    { date: '2026-04-02', type: 'run', distance: 4.69, timeMin: 25.48, hr: 154, notes: 'Perth · easy' },
-    { date: '2026-04-06', type: 'run', distance: 6.16, timeMin: 29.42, hr: 171, notes: 'Denmark · hills 133m' },
-    { date: '2026-04-11', type: 'run', distance: 6.50, timeMin: 42.57, hr: 134, notes: 'Perth · easy' },
-    { date: '2026-04-15', type: 'run', distance: 6.94, timeMin: 29.20, hr: 177, notes: 'Perth · fast 4:13/km' },
-    { date: '2026-04-18', type: 'run', distance: 8.02, timeMin: 35.48, hr: 173, notes: 'Perth · 4:25/km' },
-    { date: '2026-04-19', type: 'run', distance: 6.48, timeMin: 38.08, hr: 143, notes: 'Perth · easy' },
-    { date: '2026-04-22', type: 'run', distance: 5.12, timeMin: 32.68, hr: 132, notes: 'Perth · easy' },
-    { date: '2026-04-23', type: 'run', distance: 6.50, timeMin: 33.62, hr: 162, notes: 'Treadmill' },
-    { date: '2026-04-27', type: 'long', distance: 11.67, timeMin: 52.53, hr: 171, notes: 'Perth · 4:30/km · pre-plan' }
+    { date: '2026-03-08', type: 'run', distance: 4.17, timeMin: 32.57, hr: 154 },
+    { date: '2026-03-12', type: 'run', distance: 5.20, timeMin: 22.98, hr: 171 },
+    { date: '2026-03-17', type: 'long', distance: 10.01, timeMin: 45.48, hr: 172 },
+    { date: '2026-03-18', type: 'run', distance: 6.97, timeMin: 36.28, hr: 174 },
+    { date: '2026-03-23', type: 'run', distance: 6.05, timeMin: 37.75, hr: 172 },
+    { date: '2026-03-30', type: 'run', distance: 6.31, timeMin: 29.15, hr: 174 },
+    { date: '2026-04-02', type: 'run', distance: 4.69, timeMin: 25.48, hr: 154 },
+    { date: '2026-04-06', type: 'run', distance: 6.16, timeMin: 29.42, hr: 171 },
+    { date: '2026-04-11', type: 'run', distance: 6.50, timeMin: 42.57, hr: 134 },
+    { date: '2026-04-15', type: 'run', distance: 6.94, timeMin: 29.20, hr: 177 },
+    { date: '2026-04-18', type: 'run', distance: 8.02, timeMin: 35.48, hr: 173 },
+    { date: '2026-04-19', type: 'run', distance: 6.48, timeMin: 38.08, hr: 143 },
+    { date: '2026-04-22', type: 'run', distance: 5.12, timeMin: 32.68, hr: 132 },
+    { date: '2026-04-23', type: 'run', distance: 6.50, timeMin: 33.62, hr: 162 },
+    { date: '2026-04-27', type: 'long', distance: 11.67, timeMin: 52.53, hr: 171 }
   ];
 
-  // Storage: localStorage when available (local file or hosted page),
-  // falls back to in-memory only (artifact sandbox) — no errors either way.
-  let storageAvailable = false;
-  try {
-    const t = '__test__';
-    localStorage.setItem(t, t);
-    localStorage.removeItem(t);
-    storageAvailable = true;
-  } catch (e) {
-    storageAvailable = false;
+  let storageOk = false;
+  try { localStorage.setItem('__t', '__t'); localStorage.removeItem('__t'); storageOk = true; } catch (e) {}
+  function load() {
+    if (!storageOk) return [...SEED_DATA];
+    try { const s = localStorage.getItem(STORAGE_KEY); return s ? JSON.parse(s) : [...SEED_DATA]; }
+    catch (e) { return [...SEED_DATA]; }
   }
-
-  function loadSessions() {
-    if (!storageAvailable) return [...SEED_DATA];
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) return JSON.parse(stored);
-    } catch (e) {}
-    return [...SEED_DATA];
-  }
-
-  function saveSessions() {
-    if (!storageAvailable) return;
+  function save() {
+    if (!storageOk) return;
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions)); } catch (e) {}
   }
+  let sessions = load();
 
-  let sessions = loadSessions();
-
-  // ============ HELPERS ============
-  function paceFromSession(s) {
-    if (!s.distance || !s.timeMin) return null;
-    return s.timeMin / s.distance; // min per km
-  }
-  function paceLabel(p) {
-    if (!p) return '—';
-    const m = Math.floor(p);
-    const sec = Math.round((p - m) * 60);
-    return `${m}:${String(sec).padStart(2, '0')}`;
-  }
-  function timeLabel(min) {
-    const m = Math.floor(min);
-    const sec = Math.round((min - m) * 60);
-    return `${m}:${String(sec).padStart(2, '0')}`;
-  }
-  function parseTimeToMin(str) {
+  function paceOf(s) { return (s.distance && s.timeMin) ? s.timeMin / s.distance : null; }
+  function paceLbl(p) { if (!p) return '—'; const m = Math.floor(p); const sec = Math.round((p - m) * 60); return `${m}:${String(sec).padStart(2, '0')}`; }
+  function timeLbl(min) { const m = Math.floor(min); const sec = Math.round((min - m) * 60); return `${m}:${String(sec).padStart(2, '0')}`; }
+  function parseTime(str) {
     if (!str) return null;
-    const parts = str.split(':');
-    if (parts.length !== 2) return null;
-    const m = parseInt(parts[0], 10);
-    const s = parseInt(parts[1], 10);
-    if (isNaN(m) || isNaN(s)) return null;
-    return m + s / 60;
+    const p = str.split(':');
+    if (p.length !== 2) return null;
+    const m = parseInt(p[0], 10), s = parseInt(p[1], 10);
+    return (isNaN(m) || isNaN(s)) ? null : m + s / 60;
   }
-  function getCurrentWeek() {
-    const today = new Date();
-    const diffDays = Math.floor((today - START_DATE) / (1000 * 60 * 60 * 24));
-    const week = Math.floor(diffDays / 7) + 1;
-    return Math.max(1, Math.min(8, week));
+  function getWeek() {
+    const d = Math.floor((new Date() - START_DATE) / 86400000);
+    return Math.max(1, Math.min(8, Math.floor(d / 7) + 1));
   }
-  function fmtDate(iso) {
-    const d = new Date(iso);
-    return d.toLocaleDateString('en-AU', { day: '2-digit', month: 'short' }).toUpperCase();
+  function fmtD(iso) {
+    return new Date(iso).toLocaleDateString('en-AU', { day: '2-digit', month: 'short' }).toUpperCase();
   }
 
-  // ============ HERO STATS ============
-  function updateHero() {
-    const today = new Date();
+  function getWorkout(dow, week) {
+    if (dow === 0) return {
+      tag: 'Sunday', cls: 'rest', title: 'Rest',
+      sub: 'Full recovery. Sleep early, eat well.',
+      stats: [{ l: 'Focus', v: 'Recovery' }, { l: 'Tomorrow', v: 'Push' }],
+      cue: 'Skip the urge to "do something." Adaptation happens at rest.'
+    };
+
+    if (dow === 1) return {
+      tag: 'Monday', cls: '', title: 'Push <span class="accent">·</span> Day',
+      sub: '45 min, in and out. Compound first while fresh.',
+      stats: [{ l: 'Time', v: '45 min' }, { l: 'Rest', v: '90 sec' }],
+      lifts: [
+        { n: 'Bench Press', r: '4 × 6-8' },
+        { n: 'Overhead Press', r: '3 × 8' },
+        { n: 'Incline DB Press', r: '3 × 10' },
+        { n: 'Lateral Raises', r: '3 × 12' },
+        { n: 'Tricep Pushdowns', r: '3 × 10-12' },
+        { n: 'Tricep Overhead Ext.', r: '3 × 12' }
+      ],
+      cue: 'Bench and OHP are the money lifts — go heavy. Save the pump work for after.'
+    };
+
+    if (dow === 2) {
+      const speed = week <= 3 ? {
+        title: 'Hills', name: week === 3 ? '10 × 60s' : '8 × 60s', pace: '~3:30 /km',
+        cue: 'First 2 reps controlled. If rep 8 ≥ rep 1 in pace, you nailed it.'
+      } : week === 4 ? {
+        title: 'Intervals', name: '4 × 1km', pace: '3:55 · 12.0 km/h',
+        cue: 'Even pacing across all 4. Last rep should match first.'
+      } : week === 5 ? {
+        title: 'Intervals', name: '5 × 1km', pace: '3:50 · 12.4 km/h',
+        cue: 'Sub-19 territory. If reps 4-5 fall apart, drop pace next week.'
+      } : week === 6 ? {
+        title: 'Intervals', name: '5 × 1km · 75s rec', pace: '3:50 · 12.4 km/h',
+        cue: 'Same pace, less rest. Race-fatigue specific.'
+      } : week === 7 ? {
+        title: 'Sharpening', name: '3×1km + 4×400m', pace: '3:45 / 3:30',
+        cue: '400s fast but controlled — not a sprint.'
+      } : {
+        title: 'Taper', name: '5 × 400m', pace: '3:30 /km',
+        cue: 'Should feel SHARP, not tired. Cut to 4 reps if heavy.'
+      };
+
+      return {
+        tag: 'Tuesday', cls: '', title: speed.title + ' <span class="accent">+</span> Legs',
+        sub: 'Big day. Run first, lift after. Eat carbs 90 min before.',
+        stats: [{ l: 'Run', v: speed.name }, { l: 'Pace', v: '<span class="em">' + speed.pace + '</span>' }],
+        lifts: [
+          { n: 'Squat', r: '4 × 6-8' },
+          { n: 'Romanian Deadlift', r: '3 × 8-10' },
+          { n: 'Walking Lunges', r: '3 × 10/leg' },
+          { n: 'Leg Press', r: '3 × 10' },
+          { n: 'Calf Raises', r: '3 × 15' },
+          { n: 'Plank', r: '3 × 45s' }
+        ],
+        liftHeader: 'Leg Lift (after run · drop weight 10-15%)',
+        cue: speed.cue
+      };
+    }
+
+    if (dow === 3) {
+      const t = week <= 2 ? { s: '3 × 8 min', p: '4:45 · 12.6 km/h' }
+        : week <= 4 ? { s: '3 × 10 min', p: '4:40 · 12.9 km/h' }
+        : week <= 6 ? { s: '2 × 15 min', p: '4:35 · 13.1 km/h' }
+        : week === 7 ? { s: '1 × 20 min', p: '4:30 · 13.3 km/h' }
+        : { s: '20 min easy', p: '5:30 + strides' };
+
+      return {
+        tag: 'Wednesday', cls: '', title: 'Tempo <span class="accent">·</span> Day',
+        sub: week === 8 ? 'Taper — easy with strides only.' : 'Builds 5K speed. HR 165-172, "comfortably hard."',
+        stats: [{ l: 'Work', v: t.s }, { l: 'Pace', v: '<span class="em">' + t.p + '</span>' }],
+        lifts: [
+          { n: 'Hanging Leg Raises', r: '3 × 10-12' },
+          { n: 'Cable Woodchoppers', r: '3 × 10/side' },
+          { n: 'Pallof Press', r: '3 × 10/side' },
+          { n: 'Side Plank', r: '3 × 30s/side' },
+          { n: 'Dead Bug', r: '3 × 10/side' }
+        ],
+        liftHeader: 'Core (after run)',
+        cue: 'If HR drifts above 175 in rep 1, slow by 5 sec/km. Don\'t hero it.'
+      };
+    }
+
+    if (dow === 4) return {
+      tag: 'Thursday', cls: '', title: 'Pull <span class="accent">·</span> Day',
+      sub: 'Compound focus. Pull-ups or rows lead. 45 min.',
+      stats: [{ l: 'Time', v: '45 min' }, { l: 'Rest', v: '90 sec' }],
+      lifts: [
+        { n: 'Pull-ups', r: '4 × 6-8' },
+        { n: 'Barbell Row', r: '4 × 8' },
+        { n: 'Lat Pulldown', r: '3 × 10-12' },
+        { n: 'Seated Cable Row', r: '3 × 10' },
+        { n: 'Face Pulls', r: '3 × 15' },
+        { n: 'Bicep Curls', r: '3 × 10-12' }
+      ],
+      cue: 'Pull-ups king. If 4×8 is easy, add weight. Face pulls fix posture for running.'
+    };
+
+    if (dow === 5) return {
+      tag: 'Friday', cls: 'rest', title: 'Rest <span class="accent">·</span> or Light',
+      sub: 'After work — rest is the smart play. Long run tomorrow.',
+      stats: [{ l: 'Tomorrow', v: 'Long Run' }, { l: 'Tonight', v: 'Sleep' }],
+      lifts: [
+        { n: 'Lateral Raises', r: '3 × 15' },
+        { n: 'Rear Delt Flys', r: '3 × 15' },
+        { n: 'Bicep Curls', r: '3 × 12' },
+        { n: 'Tricep Pushdowns', r: '3 × 12' },
+        { n: 'Cable Crunches', r: '3 × 15' }
+      ],
+      liftHeader: 'Optional accessory (only if fresh)',
+      cue: 'Skip if even slightly tired. Saturday\'s long run depends on tonight\'s sleep.'
+    };
+
+    if (dow === 6) {
+      if (week === 8) return {
+        tag: 'Race Day', cls: '', title: '5K <span class="accent">·</span> Sub-19',
+        sub: 'Eight weeks in the bank. Trust it.',
+        stats: [{ l: 'Target', v: '<span class="em">18:59</span>' }, { l: 'Pace', v: '3:48 /km' }],
+        cue: 'Hold back the first km. If cooked at km 3, you went out too hard.'
+      };
+
+      const km = week === 1 ? 12 : week === 2 ? 13 : week === 3 ? 14 : week === 4 ? 14 : week === 5 ? 15 : week === 6 ? 16 : 12;
+      return {
+        tag: 'Saturday', cls: '', title: 'Long <span class="accent">·</span> ' + km + 'km',
+        sub: 'Slow and patient. The engine builder.',
+        stats: [{ l: 'Distance', v: km + ' km' }, { l: 'Pace', v: '<span class="em">5:30-6:00</span>' }],
+        cue: 'HR <155 is the rule. Don\'t push. Slow long runs let you race fast.'
+      };
+    }
+    return null;
+  }
+
+  function renderToday() {
+    const card = document.getElementById('today-card');
+    const w = getWorkout(new Date().getDay(), getWeek());
+    if (!w) return;
+
+    card.className = 'today' + (w.cls ? ' ' + w.cls : '');
+
+    const stats = w.stats.map(s => `
+      <div class="key-stat">
+        <div class="ks-label">${s.l}</div>
+        <div class="ks-value">${s.v}</div>
+      </div>`).join('');
+
+    const lifts = w.lifts ? `
+      <details>
+        <summary>${w.liftHeader || 'The Lifts'}</summary>
+        <ul class="lift-list">
+          ${w.lifts.map(l => `<li><span class="name">${l.n}</span><span class="reps">${l.r}</span></li>`).join('')}
+        </ul>
+      </details>` : '';
+
+    const cue = w.cue ? `
+      <details>
+        <summary>Coach's Note</summary>
+        <div class="coach-note">${w.cue}</div>
+      </details>` : '';
+
+    card.innerHTML = `
+      <div class="today-tag">${w.tag}</div>
+      <div class="today-title">${w.title}</div>
+      <div class="today-sub">${w.sub}</div>
+      <div class="key-stats">${stats}</div>
+      ${lifts}
+      ${cue}
+    `;
+  }
+
+  function renderTop() {
     document.getElementById('today-date').textContent =
-      today.toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
-
-    const week = getCurrentWeek();
-    document.getElementById('stat-week').innerHTML = `${week}<span class="unit">/8</span>`;
-    document.getElementById('stat-phase').textContent = PHASES[week];
-
-    const planSessions = sessions.filter(s => new Date(s.date) >= START_DATE);
-    const runs = planSessions.filter(s => s.type !== 'gym').length;
-    const gyms = planSessions.filter(s => s.type === 'gym').length;
-    document.getElementById('stat-sessions').textContent = planSessions.length;
-    document.getElementById('stat-runs').textContent = `${runs} runs · ${gyms} lifts`;
-
-    const totalDist = planSessions.reduce((sum, s) => sum + (s.distance || 0), 0);
-    const totalTime = planSessions.reduce((sum, s) => sum + (s.timeMin || 0), 0);
-    document.getElementById('stat-distance').innerHTML =
-      `${totalDist.toFixed(1)}<span class="unit">km</span>`;
-    const h = Math.floor(totalTime / 60);
-    const m = Math.floor(totalTime % 60);
-    document.getElementById('stat-time').textContent = `${h}h ${m}m total`;
+      new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short' }).toUpperCase();
+    const w = getWeek();
+    document.getElementById('pill-week').textContent = w;
+    document.getElementById('progress-fill').style.width = (w / 8 * 100) + '%';
   }
 
-  // ============ WEEK GRID ============
-  function renderWeekGrid() {
-    const grid = document.getElementById('week-grid');
-    const current = getCurrentWeek();
-    grid.innerHTML = '';
+  function renderWeeks() {
+    const dots = document.getElementById('week-dots');
+    const cur = getWeek();
+    dots.innerHTML = '';
     for (let i = 1; i <= 8; i++) {
-      const weekStart = new Date(START_DATE);
-      weekStart.setDate(weekStart.getDate() + (i - 1) * 7);
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekEnd.getDate() + 6);
-
-      const weekSessions = sessions.filter(s => {
-        const d = new Date(s.date);
-        return d >= weekStart && d <= weekEnd;
-      });
-      const complete = weekSessions.length >= 4;
-
-      const div = document.createElement('div');
-      div.className = `week ${i === current ? 'active' : ''} ${complete ? 'complete' : ''}`;
-      div.innerHTML = `
-        <div class="label">Week</div>
-        <div class="num">${String(i).padStart(2, '0')}</div>
-        <div class="phase">${PHASES[i].split(' ')[0]}</div>
-      `;
-      grid.appendChild(div);
+      const cls = i === 8 ? 'race' : (i === cur ? 'current' : (i < cur ? 'done' : ''));
+      const d = document.createElement('div');
+      d.className = 'week-dot ' + cls;
+      d.textContent = i;
+      dots.appendChild(d);
     }
   }
 
-  // ============ CHARTS ============
-  let paceChart, hrPaceChart, volumeChart;
-
-  const chartTextColor = '#8a9690';
-  const chartGridColor = '#1f2925';
-  Chart.defaults.color = chartTextColor;
-  Chart.defaults.borderColor = chartGridColor;
+  Chart.defaults.color = '#8a9690';
+  Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
   Chart.defaults.font.family = "'JetBrains Mono', monospace";
-  Chart.defaults.font.size = 10;
+  Chart.defaults.font.size = 9;
 
-  function renderPaceChart() {
+  let paceChart, volumeChart;
+  const colorByType = { tempo: '#4ad6c8', intervals: '#ff6b35', long: '#e8efe9', run: '#c8ff3e', gym: '#8a9690' };
+
+  function renderPace() {
     const ctx = document.getElementById('paceChart').getContext('2d');
-    const sorted = [...sessions]
-      .filter(s => paceFromSession(s) !== null)
-      .sort((a, b) => new Date(a.date) - new Date(b.date));
-
-    const data = sorted.map(s => ({
-      x: s.date,
-      y: paceFromSession(s),
-      type: s.type
-    }));
-
-    const colorByType = {
-      tempo: '#4ad6c8',
-      intervals: '#ff6b35',
-      long: '#e8efe9',
-      run: '#c8ff3e',
-      gym: '#8a9690'
-    };
+    const data = [...sessions].filter(s => paceOf(s)).sort((a, b) => new Date(a.date) - new Date(b.date))
+      .map(s => ({ x: s.date, y: paceOf(s), type: s.type }));
 
     if (paceChart) paceChart.destroy();
     paceChart = new Chart(ctx, {
       type: 'line',
-      data: {
-        datasets: [{
-          label: 'Pace (min/km)',
-          data: data,
-          parsing: false,
-          borderColor: '#c8ff3e',
-          borderWidth: 1.5,
-          tension: 0.25,
-          pointRadius: 5,
-          pointHoverRadius: 7,
-          pointBackgroundColor: data.map(d => colorByType[d.type] || '#c8ff3e'),
-          pointBorderColor: '#0a0e0c',
-          pointBorderWidth: 1.5
-        }]
-      },
+      data: { datasets: [{
+        data, parsing: false,
+        borderColor: '#c8ff3e', borderWidth: 1.5, tension: 0.3,
+        pointRadius: 4, pointHoverRadius: 6,
+        pointBackgroundColor: data.map(d => colorByType[d.type] || '#c8ff3e'),
+        pointBorderColor: '#050706', pointBorderWidth: 1.5
+      }] },
       options: {
         responsive: true, maintainAspectRatio: false,
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#0a0e0c',
-            borderColor: '#c8ff3e', borderWidth: 1,
-            padding: 12, titleFont: { size: 11 }, bodyFont: { size: 11 },
+            backgroundColor: '#050706', borderColor: '#c8ff3e', borderWidth: 1, padding: 10,
             callbacks: {
-              title: (items) => fmtDate(items[0].raw.x),
-              label: (item) => `${item.raw.type.toUpperCase()} · ${paceLabel(item.raw.y)} /km`
+              title: (i) => fmtD(i[0].raw.x),
+              label: (i) => `${i.raw.type.toUpperCase()} · ${paceLbl(i.raw.y)} /km`
             }
           }
         },
         scales: {
-          x: { type: 'time', time: { unit: 'week' }, grid: { color: chartGridColor }, ticks: { color: chartTextColor } },
-          y: {
-            reverse: true, grid: { color: chartGridColor },
-            ticks: {
-              color: chartTextColor,
-              callback: (v) => paceLabel(v)
-            },
-            suggestedMin: 3.5, suggestedMax: 7
-          }
+          x: { type: 'time', time: { unit: 'week' }, ticks: { maxTicksLimit: 5 }, grid: { display: false } },
+          y: { reverse: true, ticks: { callback: (v) => paceLbl(v), maxTicksLimit: 5 }, suggestedMin: 3.5, suggestedMax: 7 }
         }
       }
     });
   }
 
-  function renderHrPaceChart() {
-    const ctx = document.getElementById('hrPaceChart').getContext('2d');
-    const data = sessions
-      .filter(s => s.hr && paceFromSession(s))
-      .map(s => ({ x: s.hr, y: paceFromSession(s), type: s.type }));
-
-    const colorByType = {
-      tempo: '#4ad6c8', intervals: '#ff6b35', long: '#e8efe9', run: '#c8ff3e', gym: '#8a9690'
-    };
-
-    if (hrPaceChart) hrPaceChart.destroy();
-    hrPaceChart = new Chart(ctx, {
-      type: 'scatter',
-      data: {
-        datasets: [{
-          data: data,
-          backgroundColor: data.map(d => colorByType[d.type] || '#c8ff3e'),
-          borderColor: '#0a0e0c', borderWidth: 1,
-          pointRadius: 6, pointHoverRadius: 8
-        }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: '#0a0e0c', borderColor: '#c8ff3e', borderWidth: 1, padding: 12,
-            callbacks: {
-              label: (item) => `HR ${item.raw.x} · ${paceLabel(item.raw.y)} /km`
-            }
-          }
-        },
-        scales: {
-          x: { title: { display: true, text: 'AVG HR', color: chartTextColor, font: { size: 10, weight: 500 } }, grid: { color: chartGridColor } },
-          y: {
-            reverse: true,
-            title: { display: true, text: 'PACE /KM', color: chartTextColor, font: { size: 10, weight: 500 } },
-            ticks: { callback: (v) => paceLabel(v) },
-            grid: { color: chartGridColor }
-          }
-        }
-      }
-    });
-  }
-
-  function renderVolumeChart() {
+  function renderVolume() {
     const ctx = document.getElementById('volumeChart').getContext('2d');
-
-    // Group by week starting from a baseline 6 weeks before start date
     const baseline = new Date(START_DATE);
     baseline.setDate(baseline.getDate() - 42);
-
     const weeks = [];
     for (let i = 0; i < 14; i++) {
-      const wkStart = new Date(baseline);
-      wkStart.setDate(wkStart.getDate() + i * 7);
-      const wkEnd = new Date(wkStart);
-      wkEnd.setDate(wkEnd.getDate() + 6);
-      const total = sessions
-        .filter(s => {
-          const d = new Date(s.date);
-          return d >= wkStart && d <= wkEnd && s.type !== 'gym';
-        })
-        .reduce((sum, s) => sum + (s.distance || 0), 0);
+      const ws = new Date(baseline); ws.setDate(ws.getDate() + i * 7);
+      const we = new Date(ws); we.setDate(we.getDate() + 6);
+      const total = sessions.filter(s => {
+        const d = new Date(s.date);
+        return d >= ws && d <= we && s.type !== 'gym';
+      }).reduce((sum, s) => sum + (s.distance || 0), 0);
       weeks.push({
-        label: wkStart.toLocaleDateString('en-AU', { day: '2-digit', month: 'short' }),
-        total: total,
-        isPlan: wkStart >= START_DATE
+        label: ws.toLocaleDateString('en-AU', { day: '2-digit', month: 'short' }),
+        total, plan: ws >= START_DATE
       });
     }
 
@@ -1135,8 +979,8 @@
         labels: weeks.map(w => w.label),
         datasets: [{
           data: weeks.map(w => w.total),
-          backgroundColor: weeks.map(w => w.isPlan ? '#c8ff3e' : '#2a3631'),
-          borderRadius: 2, barThickness: 24
+          backgroundColor: weeks.map(w => w.plan ? '#c8ff3e' : 'rgba(255,255,255,0.15)'),
+          borderRadius: 4, barThickness: 12
         }]
       },
       options: {
@@ -1144,148 +988,140 @@
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#0a0e0c', borderColor: '#c8ff3e', borderWidth: 1, padding: 12,
-            callbacks: { label: (item) => `${item.raw.toFixed(1)} km` }
+            backgroundColor: '#050706', borderColor: '#c8ff3e', borderWidth: 1, padding: 10,
+            callbacks: { label: (i) => `${i.raw.toFixed(1)} km` }
           }
         },
         scales: {
-          x: { grid: { display: false }, ticks: { color: chartTextColor } },
-          y: { grid: { color: chartGridColor }, ticks: { color: chartTextColor, callback: (v) => v + 'km' } }
+          x: { ticks: { maxTicksLimit: 6 }, grid: { display: false } },
+          y: { ticks: { callback: v => v + 'k', maxTicksLimit: 4 } }
         }
       }
     });
   }
 
-  // ============ LOG LIST ============
   function renderLog() {
-    const list = document.getElementById('log-entries');
-    const sorted = [...sessions].sort((a, b) => new Date(b.date) - new Date(a.date));
+    const list = document.getElementById('log-list');
+    const sorted = [...sessions].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
 
     if (sorted.length === 0) {
-      list.innerHTML = '<div class="empty">No sessions yet — log your first one above</div>';
+      list.innerHTML = '<div class="log-empty">No sessions yet</div>';
       return;
     }
-
     list.innerHTML = sorted.map(s => {
-      const pace = paceFromSession(s);
-      const stats = [];
-      if (s.distance) stats.push(`<span>${s.distance.toFixed(2)}km</span>`);
-      if (s.timeMin) stats.push(`<span>${timeLabel(s.timeMin)}</span>`);
-      if (pace) stats.push(`<span>${paceLabel(pace)}/km</span>`);
-      if (s.hr) stats.push(`HR <span>${s.hr}</span>`);
-
+      const p = paceOf(s);
+      const meta = [];
+      if (s.distance) meta.push(`<span class="em">${s.distance.toFixed(1)}km</span>`);
+      if (s.timeMin) meta.push(timeLbl(s.timeMin));
+      if (p) meta.push(paceLbl(p) + '/km');
+      if (s.hr) meta.push('HR ' + s.hr);
       const idx = sessions.indexOf(s);
       return `
         <div class="log-entry">
-          <button class="del" data-idx="${idx}" title="Remove">×</button>
-          <div class="top">
-            <div class="type ${s.type}">${s.type}</div>
-            <div class="date">${fmtDate(s.date)}</div>
+          <div class="l-left">
+            <div class="l-type ${s.type}">${s.type}</div>
+            <div class="l-meta">${meta.join(' · ')}</div>
           </div>
-          <div class="stats">${stats.join(' · ')}</div>
-          ${s.notes ? `<div class="note">${s.notes}</div>` : ''}
-        </div>
-      `;
+          <div class="l-date">${fmtD(s.date)}</div>
+          <button class="l-del" data-i="${idx}">×</button>
+        </div>`;
     }).join('');
-
-    list.querySelectorAll('.del').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const idx = parseInt(e.target.dataset.idx, 10);
+    list.querySelectorAll('.l-del').forEach(b => {
+      b.addEventListener('click', e => {
+        const i = parseInt(e.target.dataset.i, 10);
         if (confirm('Remove this session?')) {
-          sessions.splice(idx, 1);
-          saveSessions();
+          sessions.splice(i, 1);
+          save();
           renderAll();
         }
       });
     });
   }
 
-  // ============ FORM ============
-  function setupForm() {
-    document.getElementById('f-date').valueAsDate = new Date();
-
-    document.getElementById('btn-add').addEventListener('click', () => {
-      const date = document.getElementById('f-date').value;
-      const type = document.getElementById('f-type').value;
-      const dist = parseFloat(document.getElementById('f-dist').value);
-      const timeStr = document.getElementById('f-time').value;
-      const hr = parseInt(document.getElementById('f-hr').value, 10);
-      const notes = document.getElementById('f-notes').value.trim();
-
-      if (!date) { alert('Pick a date'); return; }
-
-      const session = { date, type };
-      if (!isNaN(dist)) session.distance = dist;
-      const tMin = parseTimeToMin(timeStr);
-      if (tMin) session.timeMin = tMin;
-      if (!isNaN(hr)) session.hr = hr;
-      if (notes) session.notes = notes;
-
-      sessions.push(session);
-      saveSessions();
-      renderAll();
-
-      // reset
-      document.getElementById('f-dist').value = '';
-      document.getElementById('f-time').value = '';
-      document.getElementById('f-hr').value = '';
-      document.getElementById('f-notes').value = '';
-    });
-
-    document.getElementById('btn-export').addEventListener('click', () => {
-      const blob = new Blob([JSON.stringify(sessions, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `sub19-tracker-${new Date().toISOString().slice(0,10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    });
-
-    document.getElementById('btn-import').addEventListener('click', () => {
-      document.getElementById('f-import').click();
-    });
-
-    document.getElementById('f-import').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        try {
-          const parsed = JSON.parse(evt.target.result);
-          if (!Array.isArray(parsed)) throw new Error('Invalid format');
-          sessions = parsed;
-          renderAll();
-          alert(`Imported ${parsed.length} sessions`);
-        } catch (err) {
-          alert('Could not read that file — make sure it\'s a tracker JSON export');
-        }
-      };
-      reader.readAsText(file);
-      e.target.value = '';
-    });
+  function inferType() {
+    const dow = new Date().getDay();
+    if (dow === 2) return 'intervals';
+    if (dow === 3) return 'tempo';
+    if (dow === 6) return 'long';
+    if (dow === 1 || dow === 4 || dow === 5) return 'gym';
+    return 'run';
   }
 
-  // ============ INIT ============
+  function openModal() {
+    document.getElementById('f-date').valueAsDate = new Date();
+    document.getElementById('f-type').value = inferType();
+    document.getElementById('f-dist').value = '';
+    document.getElementById('f-time').value = '';
+    document.getElementById('f-hr').value = '';
+    document.getElementById('f-notes').value = '';
+    document.getElementById('modal-bg').classList.add('open');
+  }
+  function closeModal() {
+    document.getElementById('modal-bg').classList.remove('open');
+  }
+
+  document.getElementById('open-modal').addEventListener('click', openModal);
+  document.getElementById('btn-cancel').addEventListener('click', closeModal);
+  document.getElementById('modal-bg').addEventListener('click', e => {
+    if (e.target.id === 'modal-bg') closeModal();
+  });
+
+  document.getElementById('btn-save').addEventListener('click', () => {
+    const date = document.getElementById('f-date').value;
+    if (!date) { alert('Pick a date'); return; }
+    const s = { date, type: document.getElementById('f-type').value };
+    const d = parseFloat(document.getElementById('f-dist').value);
+    const t = parseTime(document.getElementById('f-time').value);
+    const h = parseInt(document.getElementById('f-hr').value, 10);
+    const n = document.getElementById('f-notes').value.trim();
+    if (!isNaN(d)) s.distance = d;
+    if (t) s.timeMin = t;
+    if (!isNaN(h)) s.hr = h;
+    if (n) s.notes = n;
+    sessions.push(s);
+    save();
+    closeModal();
+    renderAll();
+  });
+
+  document.getElementById('btn-export').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify(sessions, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sub19-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+  document.getElementById('btn-import').addEventListener('click', () => {
+    document.getElementById('f-import').click();
+  });
+  document.getElementById('f-import').addEventListener('change', (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = ev => {
+      try {
+        const p = JSON.parse(ev.target.result);
+        if (!Array.isArray(p)) throw new Error();
+        sessions = p;
+        save();
+        renderAll();
+        alert(`Imported ${p.length} sessions`);
+      } catch (err) { alert('Invalid file'); }
+    };
+    r.readAsText(f);
+    e.target.value = '';
+  });
+
   function renderAll() {
-    updateHero();
-    renderWeekGrid();
-    renderPaceChart();
-    renderHrPaceChart();
-    renderVolumeChart();
+    renderTop();
+    renderToday();
+    renderWeeks();
+    renderPace();
+    renderVolume();
     renderLog();
   }
-
-  // Show storage status in footer
-  const statusEl = document.getElementById('storage-status');
-  if (statusEl) {
-    statusEl.textContent = storageAvailable
-      ? 'Storage · auto-saving to this device'
-      : 'Storage · in-memory only · use Export to save';
-    statusEl.style.color = storageAvailable ? 'var(--accent-dim)' : 'var(--warm)';
-  }
-
-  setupForm();
   renderAll();
 </script>
 </body>
