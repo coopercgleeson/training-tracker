@@ -292,27 +292,11 @@ details[open] summary::after{content:'−'}
 </div>
 
 <script>
-const STORAGE_KEY = 'sub19-v3';
+const STORAGE_KEY = 'sub19-v5';
 const START_DATE  = new Date('2026-04-29T00:00:00');
 
 // Seed from Garmin CSV — timeMin = decimal moving minutes
-const SEED_DATA = [
-  { date:'2026-03-08', type:'run',       distance:4.17,  timeMin:29.90, hr:154 },
-  { date:'2026-03-12', type:'run',       distance:5.20,  timeMin:22.67, hr:171 },
-  { date:'2026-03-17', type:'long',      distance:10.01, timeMin:44.90, hr:172 },
-  { date:'2026-03-18', type:'run',       distance:6.97,  timeMin:36.25, hr:174 },
-  { date:'2026-03-23', type:'run',       distance:6.05,  timeMin:37.72, hr:172 },
-  { date:'2026-03-30', type:'run',       distance:6.31,  timeMin:29.05, hr:174 },
-  { date:'2026-04-02', type:'run',       distance:4.69,  timeMin:25.35, hr:154 },
-  { date:'2026-04-06', type:'run',       distance:6.16,  timeMin:28.75, hr:171 },
-  { date:'2026-04-11', type:'long',      distance:6.50,  timeMin:42.33, hr:134 },
-  { date:'2026-04-15', type:'run',       distance:6.94,  timeMin:29.10, hr:177 },
-  { date:'2026-04-18', type:'intervals', distance:8.02,  timeMin:35.07, hr:173 },
-  { date:'2026-04-19', type:'run',       distance:6.48,  timeMin:38.05, hr:143 },
-  { date:'2026-04-22', type:'run',       distance:5.12,  timeMin:32.15, hr:132 },
-  { date:'2026-04-23', type:'tempo',     distance:6.50,  timeMin:27.12, hr:162 },
-  { date:'2026-04-27', type:'long',      distance:11.67, timeMin:52.43, hr:171 },
-];
+const SEED_DATA = [];
 
 let storageOk=false;
 try{localStorage.setItem('__t','1');localStorage.removeItem('__t');storageOk=true;}catch(e){}
@@ -478,10 +462,18 @@ Chart.defaults.font.family="'JetBrains Mono',monospace";
 Chart.defaults.font.size=9;
 let paceChart,volumeChart;
 
+function makeGradient(ctx, colorTop, colorBot) {
+  const h = ctx.canvas.offsetHeight || ctx.canvas.height || 200;
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, colorTop);
+  grad.addColorStop(1, colorBot);
+  return grad;
+}
+
 function renderPace(){
   const ctx=document.getElementById('paceChart').getContext('2d');
 
-  // Collect all dates with any run data, sorted
+  // Collect all run sessions sorted by date
   const runSessions=sessions
     .filter(s=>['intervals','tempo','long','run'].includes(s.type)&&paceOf(s)!==null)
     .sort((a,b)=>new Date(a.date)-new Date(b.date));
@@ -493,7 +485,6 @@ function renderPace(){
   // For each type, build array aligned to allDates (null where no session)
   function series(type){
     return allDates.map(date=>{
-      // If multiple sessions same date same type, take first
       const m=sessions.find(s=>s.date===date&&s.type===type&&paceOf(s)!==null);
       return m?paceOf(m):null;
     });
@@ -501,45 +492,67 @@ function renderPace(){
 
   const intervalPaces=series('intervals');
   const tempoPaces=series('tempo');
-  const longPaces=series('long');
+  // long + easy runs both on the blue line
+  const longPaces=allDates.map(date=>{
+    const m=sessions.find(s=>s.date===date&&['long','run'].includes(s.type)&&paceOf(s)!==null);
+    return m?paceOf(m):null;
+  });
 
-  // Check we have at least something to show
   const hasData=[...intervalPaces,...tempoPaces,...longPaces].some(v=>v!==null);
 
   if(paceChart) paceChart.destroy();
 
   if(!hasData){
-    // Draw empty state
+    // Empty state — draw placeholder text on canvas
+    ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
+    ctx.fillStyle='#3a4641';
+    ctx.font="13px 'Fraunces', serif";
+    ctx.textAlign='center';
+    ctx.fillText('Log your first session to see pace trends',ctx.canvas.width/2,ctx.canvas.height/2-8);
+    ctx.font="10px 'JetBrains Mono', monospace";
+    ctx.fillText('INTERVALS · TEMPO · LONG',ctx.canvas.width/2,ctx.canvas.height/2+14);
     paceChart=null;
     return;
   }
 
-  const shared={fill:false,tension:0.3,spanGaps:false,pointBorderColor:'#050706',pointBorderWidth:1.5};
+  // Gradient fills — created after canvas is sized
+  const gradInt = makeGradient(ctx,'rgba(255,77,109,0.35)','rgba(255,77,109,0.0)');
+  const gradTmp = makeGradient(ctx,'rgba(200,255,62,0.30)','rgba(200,255,62,0.0)');
+  const gradLng = makeGradient(ctx,'rgba(74,214,200,0.28)','rgba(74,214,200,0.0)');
+
+  const shared={tension:0.35,spanGaps:false,pointBorderColor:'#050706',pointBorderWidth:1.5,fill:true};
   paceChart=new Chart(ctx,{
     type:'line',
     data:{
       labels,
       datasets:[
-        {...shared,label:'Intervals',data:intervalPaces,borderColor:'#ff4d6d',pointBackgroundColor:'#ff4d6d',borderWidth:2,pointRadius:5,pointHoverRadius:7},
-        {...shared,label:'Tempo',    data:tempoPaces,   borderColor:'#4ade80',pointBackgroundColor:'#4ade80',borderWidth:2,pointRadius:5,pointHoverRadius:7},
-        {...shared,label:'Long Run', data:longPaces,    borderColor:'#5b9cf6',pointBackgroundColor:'#5b9cf6',borderWidth:2,pointRadius:5,pointHoverRadius:7},
+        {...shared,label:'Intervals',data:intervalPaces,borderColor:'#ff4d6d',backgroundColor:gradInt,pointBackgroundColor:'#ff4d6d',borderWidth:2,pointRadius:5,pointHoverRadius:7},
+        {...shared,label:'Tempo',    data:tempoPaces,   borderColor:'#c8ff3e',backgroundColor:gradTmp,pointBackgroundColor:'#c8ff3e',borderWidth:2,pointRadius:5,pointHoverRadius:7},
+        {...shared,label:'Long/Easy',data:longPaces,    borderColor:'#4ad6c8',backgroundColor:gradLng,pointBackgroundColor:'#4ad6c8',borderWidth:2,pointRadius:4,pointHoverRadius:6},
       ]
     },
     options:{
       responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
       plugins:{
         legend:{display:false},
         tooltip:{
-          backgroundColor:'#050706',borderColor:'rgba(255,255,255,0.15)',borderWidth:1,padding:10,
+          backgroundColor:'#0d1210',borderColor:'rgba(255,255,255,0.12)',borderWidth:1,padding:10,
           callbacks:{
             title:(i)=>labels[i[0].dataIndex],
-            label:(i)=>`${i.dataset.label}: ${paceLbl(i.raw)} /km`
+            label:(i)=>i.raw!==null?`${i.dataset.label}: ${paceLbl(i.raw)} /km`:null,
+            filter:(i)=>i.raw!==null
           }
         }
       },
       scales:{
         x:{ticks:{maxTicksLimit:6,color:'#4a5651'},grid:{display:false}},
-        y:{reverse:true,ticks:{callback:(v)=>paceLbl(v),maxTicksLimit:5},suggestedMin:3.2,suggestedMax:6.5}
+        y:{
+          reverse:true,
+          ticks:{callback:(v)=>paceLbl(v),maxTicksLimit:5,color:'#4a5651'},
+          grid:{color:'rgba(255,255,255,0.04)'},
+          suggestedMin:3.2,suggestedMax:6.5
+        }
       }
     }
   });
@@ -632,7 +645,7 @@ document.getElementById('f-import').addEventListener('change',e=>{
 });
 
 function renderAll(){renderTop();renderToday();renderWeeks();renderPlanTable();renderPace();renderVolume();renderLog();}
-renderAll();
+requestAnimationFrame(()=>requestAnimationFrame(renderAll));
 </script>
 </body>
 </html>
